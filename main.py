@@ -31,8 +31,8 @@ elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at 
 
 # Parameters
 input_size = 9
-hidden_layers = 3 # Some arbitrary number I chose
-hidden_size = [27, 18, 9] # Some arbitrary numbers I chose
+hidden_layers = 6 # Some arbitrary number I chose
+hidden_size = [27, 18, 9, 18, 27, 18] # Some arbitrary numbers I chose
 output_size = 9
 
 print("Training the AI...")

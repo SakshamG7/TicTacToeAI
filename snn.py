@@ -126,19 +126,24 @@ class SimpleNeuralNetwork(object):
     # returns -> SimpleNeuralNetwork: the child neural network
     def crossover(self, partner: SimpleNeuralNetwork) -> SimpleNeuralNetwork:
         # Very simple crossover, just a 50-50 split, and we know the structure of the neural network is the same, so no Augmenting Topologies sadly
-        child = self.copy()
+        child = SimpleNeuralNetwork(self.input_size, self.hidden_layers, self.hidden_size, self.output_size)
         # Crossover the weights
         for i in range(len(self.weights)):
             for j in range(self.weights[i].rows):
                 for k in range(self.weights[i].cols):
                     if random.random() < 0.5:
                         child.weights[i].data[j][k] = partner.weights[i].data[j][k]
+                    else:
+                        child.weights[i].data[j][k] = self.weights[i].data[j][k]
 
         # Crossover the biases
         for i in range(len(self.biases)):
             for j in range(self.biases[i].rows):
+                for k in range(self.biases[i].cols):
                     if random.random() < 0.5:
-                        child.biases[i].data[j][0] = partner.biases[i].data[j][0] # shape is (rows, 1)
+                        child.biases[i].data[j][k] = partner.biases[i].data[j][k]
+                    else:
+                        child.biases[i].data[j][k] = self.biases[i].data[j][k]
 
         return child
     
@@ -154,8 +159,9 @@ class SimpleNeuralNetwork(object):
 
         for i in range(len(self.biases)):
             for j in range(self.biases[i].rows):
-                    if random.random() < mutation_rate:
-                        self.biases[i].data[j][0] += random.uniform(-1, 1)
+                    for k in range(self.biases[i].cols):
+                        if random.random() < mutation_rate:
+                            self.biases[i].data[j][k] += random.uniform(-1, 1)
 
     # save: saves the neural network to a file
     # filename -> str: the filename to save the neural network to
