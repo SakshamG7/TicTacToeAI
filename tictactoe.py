@@ -65,3 +65,6 @@ class TicTacToe(object):
             self.over = True
             return True
         return False    
+    
+    def is_over(self) -> bool:
+        return self.over
