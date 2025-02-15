@@ -77,14 +77,15 @@ for generation in range(generations):
                         ai1.update_fitness(-thought_away_from_first_move)
                     else:
                         ai2.update_fitness(-thought_away_from_first_move)
-                    break # End the game if the AI makes an invalid move
+                else:
+                    # Reward the AI for making a valid move
+                    if game.turn == 1:
+                        ai1.update_fitness(1)
+                    else:
+                        ai2.update_fitness(1)
 
                 game.play(move)
-            # Update the fitness of the AIs
-            if invalid_move:
-                game.reset()
-                continue
-            elif game.winner == 1: # AI 1 wins
+            if game.winner == 1: # AI 1 wins
                 ai1.wins += 1
                 ai2.losses += 1
             elif game.winner == -1: # AI 2 wins                
