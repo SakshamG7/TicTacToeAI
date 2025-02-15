@@ -146,7 +146,7 @@ for generation in range(generations):
                 # Reward the winning AI
                 ai1.update_fitness(1)
                 # Punish the losing AI
-                ai2.update_fitness(-0.5)
+                ai2.update_fitness(-1)
 
                 ai1.wins += 1
                 ai2.losses += 1
@@ -154,7 +154,7 @@ for generation in range(generations):
                 # Reward the winning
                 ai2.update_fitness(1)
                 # Punish the losing AI
-                ai1.update_fitness(-0.5)
+                ai1.update_fitness(-1)
                 
                 ai2.wins += 1
                 ai1.losses += 1
