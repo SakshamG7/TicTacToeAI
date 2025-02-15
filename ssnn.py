@@ -228,6 +228,7 @@ def main():
     TURNS = 1000
 
     for i in range(TURNS):
+        game.reset()
         # Play the game
         while not game.is_over():
             # Get the current state of the game
