@@ -95,6 +95,7 @@ for generation in range(generations):
                 game.play(move)
             # Update the fitness of the AIs
             if invalid_move:
+                game.reset()
                 continue
             elif game.winner == 1: # AI 1 wins
                 ai1.wins += 1
