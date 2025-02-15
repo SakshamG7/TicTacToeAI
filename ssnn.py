@@ -235,5 +235,5 @@ def play(filename):
 
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
-    main()
-    # play('ssnn.json')
+    # main()
+    play('ssnn.json')
