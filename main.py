@@ -21,9 +21,9 @@ from tictactoe import TicTacToe
 
 # Training the AI
 # Hyperparameters, most numbers are arbitrary
-population_size = 100
+population_size = 20
 generations = 1000000
-mutation_rate = 0.1
+mutation_rate = 0.01
 elite_percentage = 0.3 # The top 10% of the population will be carried over to the next generation, ensures that the best AI is not lost
 model_dir = "models" # Directory to save the models
 
@@ -31,8 +31,8 @@ elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at 
 
 # Parameters
 input_size = 9
-hidden_layers = 5 # Some arbitrary number I chose
-hidden_size = [27, 18, 15, 13, 10] # Some arbitrary numbers I chose
+hidden_layers = 3 # Some arbitrary number I chose
+hidden_size = [27]*3 # Some arbitrary numbers I chose
 output_size = 9
 
 print("Training the AI...")
@@ -51,6 +51,8 @@ for i in range(population_size):
 for generation in range(generations):
     for i in range(population_size):
         for j in range(population_size):
+            if i == j:
+                continue
             invalid_move = False
             ai1 = population[i]
             ai2 = population[j]
@@ -74,18 +76,29 @@ for generation in range(generations):
                     invalid_move = True
                     # Punish the AI for making an invalid move and by how far it was from the first move
                     if game.turn == 1:
-                        ai1.update_fitness(-thought_away_from_first_move)
+                        ai1.update_fitness(-1 * thought_away_from_first_move**2)
                     else:
-                        ai2.update_fitness(-thought_away_from_first_move)
+                        ai2.update_fitness(-1 * thought_away_from_first_move**2)
                 else:
                     # Reward the AI for making a valid move
                     if game.turn == 1:
-                        ai1.update_fitness(1)
+                        ai1.update_fitness(moves[first_move])
                     else:
-                        ai2.update_fitness(1)
+                        ai2.update_fitness(moves[first_move])
+                    pass
 
                 game.play(move)
-            if game.winner == 1: # AI 1 wins
+            if invalid_move:
+                # Punish the AI for making an invalid move, reset all their progress
+                if game.turn == 1:
+                    ai1.wins = 0
+                    ai1.losses = 0
+                    ai1.draws = 0
+                else:
+                    ai2.wins = 0
+                    ai2.losses = 0
+                    ai2.draws = 0
+            elif game.winner == 1: # AI 1 wins
                 ai1.wins += 1
                 ai2.losses += 1
             elif game.winner == -1: # AI 2 wins                
@@ -94,11 +107,10 @@ for generation in range(generations):
             elif game.winner == 0: # Draw, better than losing so give both AIs half a point
                 ai1.draws += 1
                 ai2.draws += 1
-            game.reset()
     
     # Calculate the fitness of the AIs
     for ai in population:
-        ai.update_fitness((ai.wins + ai.draws // 2) - ai.losses * 4)
+        ai.update_fitness((ai.wins + ai.draws // 2) - ai.losses ** 4)
 
     # Sort the population based on the fitness
     population.sort(key=lambda x: x.get_fitness(), reverse=True)
@@ -110,7 +122,7 @@ for generation in range(generations):
         best_fitness = population[0].get_fitness()
 
     # Print the best AI in the generation
-    print(f"Generation {generation + 1}: Best AI Fitness: {population[0].get_fitness()}")
+    print(f"Generation {generation + 1}: Best AI Fitness: {population[0].get_fitness()} | Best Overall Fitness: {best_fitness}")
     print(f"Wins: {population[0].wins}, Losses: {population[0].losses}, Draws: {population[0].draws}")
 
     # Carry over the top 10% of the population
