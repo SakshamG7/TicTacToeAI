@@ -32,7 +32,7 @@ elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at 
 # Parameters
 input_size = 27
 hidden_layers = 3 # Some arbitrary number I chose
-hidden_size = [27, 9, 18] # Some arbitrary numbers I chose
+hidden_size = [27 * 3, 27 * 2, 27 * 1] # Some arbitrary numbers I chose
 output_size = 9
 
 print("Training the AI...")
@@ -51,6 +51,7 @@ for generation in range(generations):
         for j in range(population_size):
             if i == j:
                 continue
+            invalid_move = False
             ai1 = population[i]
             ai2 = population[j]
             game = TicTacToe()
@@ -87,10 +88,15 @@ for generation in range(generations):
                     else:
                         ai2.update_fitness(-1 * (1 - moves[first_move]))
                     move = moves.index(max(moves))
+                if not game.is_valid_move(first_move):
+                    invalid_move = True
+                    break # End the game if the AI makes an invalid move
 
                 game.play(move)
             # Update the fitness of the AIs
-            if game.winner == 1: # AI 1 wins
+            if invalid_move:
+                continue
+            elif game.winner == 1: # AI 1 wins
                 ai1.wins += 1
                 ai2.losses += 1
             elif game.winner == -1: # AI 2 wins                
