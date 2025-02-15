@@ -147,14 +147,23 @@ for generation in range(generations):
                 ai1.update_fitness(1)
                 # Punish the losing AI
                 ai2.update_fitness(-0.5)
+
+                ai1.wins += 1
+                ai2.losses += 1
             elif game.winner == -1: # AI 2 wins
                 # Reward the winning
                 ai2.update_fitness(1)
                 # Punish the losing AI
                 ai1.update_fitness(-0.5)
+                
+                ai2.wins += 1
+                ai1.losses += 1
             elif game.winner == 0: # Draw, better than losing so give both AIs half a point
                 ai1.update_fitness(0.5)
                 ai2.update_fitness(0.5)
+
+                ai1.draws += 1
+                ai2.draws += 1
             game.reset()
 
     # Sort the population based on the fitness
@@ -166,6 +175,7 @@ for generation in range(generations):
 
     # Print the best AI in the generation
     print(f"Generation {generation + 1}: Best AI Fitness: {population[0].get_fitness()}")
+    print(f"X Wins: {population[0].wins}, O Wins: {population[0].losses}, Draws: {population[0].draws}")
 
     # Carry over the top 10% of the population
     elite = population[:elite_cutoff] # Ensure that at least one AI is carried over
@@ -190,7 +200,7 @@ for generation in range(generations):
     population = new_population
 
 # Save the best AI
-population[0].save(f"{model_dir}/best_ai_gen_{generation}_fitness_{best_fitness}_final.json")
+population[0].save(f"{model_dir}/best_ai_gen_{generation}_fitness_{population[0].get_fitness()}_final.json")
 
 # End of Training
 print("Training Complete!")

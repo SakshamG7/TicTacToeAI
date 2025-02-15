@@ -56,6 +56,9 @@ class SimpleNeuralNetwork(object):
         self.hidden_layers = hidden_layers
         self.hidden_size = hidden_size
         self.fitness = 0
+        self.wins = 0
+        self.losses = 0
+        self.draws = 0
         # Initialize the weights and biases with random values
         self.weights = []
         self.biases = []
