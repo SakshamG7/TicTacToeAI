@@ -63,16 +63,23 @@ class SimpleNeuralNetwork(object):
         self.weights = []
         self.biases = []
 
-        for i in range(hidden_layers + 1):
+        for i in range(self.hidden_layers + 1):
             if i == 0:
-                self.weights.append(gpy.matrix([[random.uniform(-1, 1) for j in range(hidden_size[i])] for k in range(input_size)]))
-                self.biases.append(gpy.matrix([[random.uniform(-1, 1)] for j in range(hidden_size[i])]))
-            elif i == hidden_layers:
-                self.weights.append(gpy.matrix([[random.uniform(-1, 1) for j in range(output_size)] for k in range(hidden_size[i - 1])]))
-                self.biases.append(gpy.matrix([[random.uniform(-1, 1)] for j in range(output_size)]))
+                self.weights.append(gpy.matrix(rows=self.input_size, cols=self.hidden_size[i]))
+                self.biases.append(gpy.matrix(rows=1, cols=self.hidden_size[i]))
+            elif i == self.hidden_layers:
+                self.weights.append(gpy.matrix(rows=self.hidden_size[i - 1], cols=self.output_size))
+                self.biases.append(gpy.matrix(rows=1, cols=self.output_size))
             else:
-                self.weights.append(gpy.matrix([[random.uniform(-1, 1) for j in range(hidden_size[i])] for k in range(hidden_size[i - 1])]))
-                self.biases.append(gpy.matrix([[random.uniform(-1, 1)] for j in range(hidden_size[i])]))
+                self.weights.append(gpy.matrix(rows=self.hidden_size[i - 1], cols=self.hidden_size[i]))
+                self.biases.append(gpy.matrix(rows=1, cols=self.hidden_size[i]))
+
+            for j in range(self.weights[i].rows):
+                for k in range(self.weights[i].cols):
+                    self.weights[i].data[j][k] = random.uniform(-1, 1)
+            for j in range(self.biases[i].rows):
+                for k in range(self.biases[i].cols):
+                    self.biases[i].data[j][k] = random.uniform(-1, 1)
 
     # Set the fitness of the neural network
     def set_fitness(self, fitness: float) -> None:
@@ -99,7 +106,7 @@ class SimpleNeuralNetwork(object):
             if i == 0:
                 final_output = gpy.dot_product(inputs, self.weights[i]) + self.biases[i]
                 # Update the final_output with the activation function
-                final_output = final_output.apply(LeakyReLU)
+                final_output = final_output.apply(Sigmoid)
             elif i == self.hidden_layers:
                 # Final Layer
                 final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
@@ -107,18 +114,28 @@ class SimpleNeuralNetwork(object):
             else:
                 # Intermediate Hidden Layer
                 final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
-                final_output = final_output.apply(LeakyReLU)
+                final_output = final_output.apply(Sigmoid)
         
-        # Apply sigmoid to the final output
-        final_output = final_output.apply(Sigmoid)
         return Softmax(final_output) # Apply the softmax function to get the probabilities
 
     # copy: returns a copy of the neural network
     # returns -> SimpleNeuralNetwork: the copy of the neural network
     def copy(self) -> SimpleNeuralNetwork:
         new_nn = SimpleNeuralNetwork(self.input_size, self.hidden_layers, self.hidden_size, self.output_size)
-        new_nn.weights = [x.copy() for x in self.weights]
-        new_nn.biases = [x.copy() for x in self.biases]
+        new_nn.fitness = self.fitness
+        new_nn.weights = []
+        new_nn.biases = []
+
+        for i in range(len(self.weights)):
+            new_nn.weights.append(self.weights[i].copy())
+            new_nn.biases.append(self.biases[i].copy())
+            for j in range(self.weights[i].rows):
+                for k in range(self.weights[i].cols):
+                    new_nn.weights[i].data[j][k] = self.weights[i].data[j][k]
+            for j in range(self.biases[i].rows):
+                for k in range(self.biases[i].cols):
+                    new_nn.biases[i].data[j][k] = self.biases[i].data[j][k]
+
         return new_nn
 
     # crossover: crossover function for the neural network
@@ -139,7 +156,7 @@ class SimpleNeuralNetwork(object):
         # Crossover the biases
         for i in range(len(self.biases)):
             for j in range(self.biases[i].rows):
-                for k in range(self.biases[i].cols):
+                for k in range(len(self.biases[i].data[j])):
                     if random.random() < 0.5:
                         child.biases[i].data[j][k] = partner.biases[i].data[j][k]
                     else:
