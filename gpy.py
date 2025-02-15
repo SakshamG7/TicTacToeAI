@@ -3,7 +3,7 @@ Saksham's Custom Matrix Implementation (Goel's Python)
 
 Author: Saksham Goel
 Date: Feb 15, 2025
-Version: 1.2
+Version: 2.0
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -43,6 +43,15 @@ class matrix(object):
         self.data = new_data
         self.rows, self.cols = self.cols, self.rows
     
+    # apply: applies a function to each element of the matrix
+    # func: the function to apply
+    def apply(self, func) -> matrix:
+        result = matrix(self.data.copy())
+        for i in range(self.rows):
+            for j in range(self.cols):
+                result.data[i][j] = func(result.data[i][j])
+        return result
+
     # copy: returns a copy of the matrix
     def copy(self) -> matrix:
         return matrix(self.data.copy())

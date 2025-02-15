@@ -57,11 +57,25 @@ class SimpleNeuralNetwork(object):
             else:
                 self.weights.append(gpy.matrix([[random.random() for j in range(hidden_size[i])] for k in range(hidden_size[i - 1])]))
                 self.biases.append(gpy.matrix([[random.random()] for j in range(hidden_size[i])]))
-        
-        
 
     # forward: forward pass of the neural network
     # x -> gpy.matrix: the input matrix
     # returns -> gpy.matrix: the output matrix
-    def forward(self, x: gpy.matrix) -> gpy.matrix:
-        return x
+    def forward(self, x: list) -> gpy.matrix:
+        inputs = gpy.matrix(data=x)
+        final_output = gpy.matrix(rows=1, cols=self.output_size)
+
+        for i in range(self.hidden_layers + 1):
+            if i == 0:
+                final_output = gpy.dot_product(inputs, self.weights[i]) + self.biases[i]
+                # Update the final_output with the activation function
+                final_output = final_output.apply(LeakyReLU)
+            elif i == self.hidden_layers:
+                # Final Layer
+                final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
+            else:
+                # Intermediate Hidden Layer
+                final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
+                final_output = final_output.apply(LeakyReLU)
+        
+        return softmax(final_output) # Apply the softmax function to get the probabilities
