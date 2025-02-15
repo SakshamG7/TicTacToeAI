@@ -15,3 +15,5 @@ This could be repurposed for chess now that I think about it :)
 #### Website: https://aceiq.ca
 #### Contact: mail@aceiq.ca
 #### Location: Canada, ON, Oakville
+
+I Think a better fitness function, based on the median or something would be a better measure of the model's performance, as we have to trust that the latest model is the best, since it would make more draws over time, thus having a lower fitness than the previous round.
