@@ -4,7 +4,7 @@ from tictactoe import TicTacToe
 # Play the game against the AI
 print("Playing against the AI...")
 # Load best ai from the models directory
-ai = snn.load("models/best_ai_gen_575_fitness_73.38071299773976.json")
+ai = snn.load("models/best_ai_gen_2029_fitness_68.02656886710022.json")
 game = TicTacToe()
 while not game.over:
     if game.turn == 1:

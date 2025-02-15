@@ -18,6 +18,7 @@ Location: Canada, ON, Oakville
 import snn
 import random
 from tictactoe import TicTacToe
+import math
 
 # Training the AI
 # Hyperparameters, most numbers are arbitrary
@@ -31,8 +32,8 @@ elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at 
 
 # Parameters
 input_size = 9
-hidden_layers = 3 # Some arbitrary number I chose
-hidden_size = [27]*3 # Some arbitrary numbers I chose
+hidden_size = [64, 32, 16] # Some arbitrary numbers I chose
+hidden_layers = len(hidden_size) # Some arbitrary number I chose
 output_size = 9
 
 print("Training the AI...")
@@ -85,8 +86,6 @@ for generation in range(generations):
                         ai1.update_fitness(moves[first_move])
                     else:
                         ai2.update_fitness(moves[first_move])
-                    pass
-
                 game.play(move)
             if invalid_move:
                 # Punish the AI for making an invalid move, reset all their progress
@@ -111,6 +110,10 @@ for generation in range(generations):
     # Calculate the fitness of the AIs
     for ai in population:
         ai.update_fitness((ai.wins + ai.draws // 2) - ai.losses ** 4)
+        # Normalize the fitness
+        ai.update_fitness(ai.get_fitness() / population_size)
+
+        
 
     # Sort the population based on the fitness
     population.sort(key=lambda x: x.get_fitness(), reverse=True)
