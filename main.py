@@ -45,6 +45,8 @@ best_fitness = float("-inf")
 for i in range(population_size):
     population.append(snn.SimpleNeuralNetwork(input_size, hidden_layers, hidden_size, output_size))
 
+# First encourage playing legal moves, then encourage winning, then encourage not losing
+
 # Play the games
 for generation in range(generations):
     for i in range(population_size):
