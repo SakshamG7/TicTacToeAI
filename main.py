@@ -89,7 +89,7 @@ class TicTacToe(object):
 # Training the AI
 
 # Hyperparameters, most numbers are arbitrary
-population_size = 5
+population_size = 100
 generations = 1000
 mutation_rate = 0.05
 elite_percentage = 0.3 # The top 10% of the population will be carried over to the next generation, ensures that the best AI is not lost
@@ -107,9 +107,6 @@ print("Training the AI...")
 
 # Initialize the population
 population = []
-
-# Tracker for the best AI
-best_fitness = float("-inf") # Litterally anything is better than this
 
 for i in range(population_size):
     population.append(snn.SimpleNeuralNetwork(input_size, hidden_layers, hidden_size, output_size))
@@ -164,12 +161,11 @@ for generation in range(generations):
     population.sort(key=lambda x: x.get_fitness(), reverse=True)
 
     # Check if the best AI in this generation is better than the best AI in the previous generation
-    if population[0].get_fitness() > best_fitness:
-        best_fitness = population[0].get_fitness()
-        population[0].save(f"{model_dir}/best_ai_gen_{generation}_fitness_{best_fitness}.json")
+    # Fitness will change every generation, so we can only trust that the latest AI is the best, especially since the previous elite models are carried over, fitness will lower as there will be more draws
+    population[0].save(f"{model_dir}/best_ai_gen_{generation}_fitness_{population[0].get_fitness()}.json")
 
     # Print the best AI in the generation
-    print(f"Generation {generation + 1}: Best AI Fitness: {population[0].get_fitness()} | Best Overall Fitness: {best_fitness}")
+    print(f"Generation {generation + 1}: Best AI Fitness: {population[0].get_fitness()}")
 
     # Carry over the top 10% of the population
     elite = population[:elite_cutoff] # Ensure that at least one AI is carried over
