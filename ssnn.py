@@ -14,7 +14,6 @@ Location: Canada, ON, Oakville
 """
 
 # Importing Libraries
-from tictactoe import TicTacToe
 import math
 import random
 
@@ -41,12 +40,6 @@ class SelfLearningNeuralNetwork(object):
         self.connections = {}
         self.input_ids = []
         self.output_ids = []
-        
-        # Add Input and Output Neurons to neurons
-        for i in range(input_size):
-            self.neurons[f'input_{i}'] = [random.random(), 0, 0]
-        for i in range(output_size):
-            self.neurons[f'output_{i}'] = [random.random(), 0, 0]
 
     # Add Neuron to the Neural Network
     # neuron_id: Neuron ID
@@ -69,7 +62,8 @@ class SelfLearningNeuralNetwork(object):
     # Forward Propagation
     # inputs: Inputs to the Neural Network
     # expected_outputs: Expected Number Outputs
-    def forward_propagation(self, inputs, expected_outputs):
+    # treshold: Treshold for confidence, if the confidence is less than the treshold, the Neural Network must adapt/change because it is not confident and stuck
+    def forward_propagation(self, inputs, expected_outputs, treshold=0.75):
         if len(inputs) < self.input_size:
             # Grow more input neurons
             for i in range(self.input_size - len(inputs)):
@@ -100,6 +94,41 @@ class SelfLearningNeuralNetwork(object):
             self.neurons[target_neuron_id][2] = SakshamsLinearCutOff(self.neurons[target_neuron_id][2])
             self.neurons[target_neuron_id][1] += 1
             self.neurons[source_neuron_id][1] += 1
-        return self.neurons['output']
+        
+        # Return the output neurons
+        outputs = []
+        for output_id in self.output_ids:
+            outputs.append(self.neurons[output_id][2])
+        outputs = softmax(outputs)
 
-    # is_stuck: Check if the Neural Network is stuck
+        if max(outputs) < treshold:
+            # The Neural Network is not confident, it must adapt
+            # Add new connections to unused neurons
+            for i in range(random.randint(1, 1 + len(self.neurons) // 2)):
+                source_neuron_id = random.choice(self.input_ids)
+                target_neuron_id = random.choice(self.output_ids)
+                weight = random.uniform(-1, 1)
+                connection_id = max(self.connections.keys()) + 1
+                self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
+            
+                # Add new neurons, 50 percent chance of adding a new neuron
+                if random.random() < 0.5:
+                    new_id = max(self.neurons.keys()) + 1
+                    # Connect the new neuron to 2 random neurons
+                    n1 = random.choice(list(self.neurons.keys()))
+                    n2 = random.choice(list(self.neurons.keys()))
+                    while n1 == n2:
+                        n2 = random.choice(list(self.neurons.keys()))
+                    self.add_neuron(new_id, random.random())
+                    self.add_connection(max(self.connections.keys()) + 1, n1, new_id, random.uniform(-1, 1))
+                    self.add_connection(max(self.connections.keys()) + 1, n2, new_id, random.uniform(-1, 1))
+                
+                # Add new connections to existing neurons, 33 percent chance of adding a new connection
+                if random.random() < 0.33:
+                    source_neuron_id = random.choice(list(self.neurons.keys()))
+                    target_neuron_id = random.choice(list(self.neurons.keys()))
+                    weight = random.uniform(-1, 1)
+                    connection_id = max(self.connections.keys()) + 1
+                    self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
+
+        return outputs
