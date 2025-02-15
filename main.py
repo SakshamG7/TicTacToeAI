@@ -32,7 +32,7 @@ elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at 
 # Parameters
 input_size = 9
 hidden_layers = 3 # Some arbitrary number I chose
-hidden_size = [9, 18, 27] # Some arbitrary numbers I chose
+hidden_size = [27, 18, 9] # Some arbitrary numbers I chose
 output_size = 9
 
 print("Training the AI...")
@@ -75,8 +75,16 @@ for generation in range(generations):
                     # Punish the AI for making an invalid move and by how far it was from the first move
                     if game.turn == 1:
                         ai1.update_fitness(-thought_away_from_first_move)
+                        # Reset the AI's stats, as it does not know how to play the game yet
+                        ai1.wins = 0
+                        ai1.losses = 0
+                        ai1.draws = 0
                     else:
                         ai2.update_fitness(-thought_away_from_first_move)
+                        # Reset the AI's stats, as it does not know how to play the game yet
+                        ai2.wins = 0
+                        ai2.losses = 0
+                        ai2.draws = 0
                     break # End the game if the AI makes an invalid move
 
                 game.play(move)
