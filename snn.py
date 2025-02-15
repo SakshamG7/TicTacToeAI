@@ -5,7 +5,7 @@ not sure if this will work, but its worth a try!
 
 Author: Saksham Goel
 Date: Feb 15, 2025
-Version: 1.0
+Version: 1.1
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -25,14 +25,24 @@ import json # useful for saving and loading the neural network
 def LeakyReLU(x: float) -> float:
     return x if x > 0 else 0.01 * x
 
-# Derivative of the Activation Function
-def dLeakyReLU(x: float) -> float:
-    return 1 if x > 0 else 0.01
+def Sigmoid(x: float) -> float:
+    # Avoid Overflow
+    if x > 10:
+        return 1
+    elif x < -10:
+        return 0
+    return 1 / (1 + math.exp(-x))
 
 # Output Activation Function, useful for probabilities distribution
-def softmax(x: gpy.matrix) -> gpy.matrix:
-    return x.apply(math.exp) / x.sum().apply(math.exp)
+def Softmax(x: gpy.matrix) -> gpy.matrix:
+    result = gpy.matrix(rows=1, cols=x.cols)
+    for i in range(x.cols):
+        result.data[0][i] = math.exp(x.data[0][i])
+    total = sum(result.data[0])
+    for i in range(x.cols):
+        result.data[0][i] /= total
 
+    return result
 # Neural Network Class
 class SimpleNeuralNetwork(object):
     # __init__: constructor for the neural network, initializes the input and output size
@@ -90,12 +100,12 @@ class SimpleNeuralNetwork(object):
             elif i == self.hidden_layers:
                 # Final Layer
                 final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
+                final_output = final_output.apply(Sigmoid)
             else:
                 # Intermediate Hidden Layer
                 final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
                 final_output = final_output.apply(LeakyReLU)
-
-        return softmax(final_output) # Apply the softmax function to get the probabilities
+        return Softmax(final_output) # Apply the softmax function to get the probabilities
 
     # copy: returns a copy of the neural network
     # returns -> SimpleNeuralNetwork: the copy of the neural network

@@ -3,7 +3,7 @@ Saksham's Custom Matrix Implementation (Goel's Python)
 
 Author: Saksham Goel
 Date: Feb 15, 2025
-Version: 2.0
+Version: 3.0
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -27,9 +27,14 @@ class matrix(object):
         if len(data) == 0 and rows == -1 and cols == -1:
             raise ValueError("No data or dimensions provided")
 
+        # If data is only 1D, convert it to 2D
         if len(data) != 0:
-            self.rows = len(data)
-            self.cols = len(data[0])
+            if type(data[0]) != list:
+                self.data = [data]
+
+        if len(data) != 0:
+            self.rows = len(self.data)
+            self.cols = len(self.data[0])
         if rows != -1 and cols != -1:
             self.data = [[0 for i in range(cols)] for j in range(rows)]
     
@@ -59,7 +64,10 @@ class matrix(object):
     # __add__: adds two matrices together
     def __add__(self, other: matrix) -> matrix:
         if self.rows != other.rows or self.cols != other.cols:
-            return None
+            if self.rows == other.cols and self.cols == other.rows:
+                other.transpose()
+            else:
+                return None
         result = matrix(self.data.copy())
         for i in range(self.rows):
             for j in range(self.cols):
@@ -126,20 +134,28 @@ class matrix(object):
         for i in range(self.rows):
             self.data[i].pop(index)
         self.cols -= 1
+    
+    ### sum, returns the sum of all elements in the matrix
+    def sum(self) -> float:
+        result = 0
+        for i in range(self.rows):
+            for j in range(self.cols):
+                result += self.data[i][j]
+        return result
 
 
 ### dot_product, returns the dot product of two matrices, auto transposing built in
 # mat1: the first matrix
 # mat2: the second matrix
 def dot_product(mat1: matrix, mat2: matrix) -> matrix:
-    if len(mat1[0]) != len(mat2):
-        if len(mat1) != len(mat2[0]):
-            return None
-        else:
+    if mat1.cols != mat2.rows:
+        if mat1.cols == mat2.cols and mat1.rows == mat2.rows: # If the matrices are the same size, transpose one
             mat2.transpose()
-    result = matrix(len(mat1), len(mat2[0]))
-    for i in range(len(mat1)):
-        for j in range(len(mat2[0])):
-            for k in range(len(mat1[0])):
-                result.data[i][j] += mat1.data[i][k] * mat2.data[j][k]
+        else:
+            return None
+    result = matrix(rows=mat1.rows, cols=mat2.cols)
+    for i in range(mat1.rows):
+        for j in range(mat2.cols):
+            for k in range(mat1.cols):
+                result.data[i][j] += mat1.data[i][k] * mat2.data[k][j]
     return result

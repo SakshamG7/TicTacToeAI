@@ -39,7 +39,7 @@ class TicTacToe(object):
         if self.over:
             return
         
-        if self.board[move] == 0:
+        if self.is_valid_move(move):
             self.board[move] = self.turn
             self.turn = -self.turn
         else:
@@ -47,6 +47,9 @@ class TicTacToe(object):
 
         self.check_winner()
         self.check_draw()
+
+    def is_valid_move(self, move: int) -> bool:
+        return self.board[move] == 0
 
     def print_board(self) -> None:
         for i in range(3):
@@ -86,10 +89,10 @@ class TicTacToe(object):
 # Training the AI
 
 # Hyperparameters, most numbers are arbitrary
-population_size = 100
+population_size = 5
 generations = 1000
 mutation_rate = 0.05
-elite_percentage = 0.1 # The top 10% of the population will be carried over to the next generation, ensures that the best AI is not lost
+elite_percentage = 0.3 # The top 10% of the population will be carried over to the next generation, ensures that the best AI is not lost
 model_dir = "models" # Directory to save the models
 
 elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at least two AIs is carried over
@@ -99,6 +102,8 @@ input_size = 9
 hidden_layers = 3 # Some arbitrary number I chose
 hidden_size = [9, 3, 9] # Some arbitrary numbers I chose, resembles a bottleneck architecture
 output_size = 9
+
+print("Training the AI...")
 
 # Initialize the population
 population = []
@@ -120,10 +125,26 @@ for generation in range(generations):
             game = TicTacToe()
             while not game.over:
                 if game.turn == 1:
-                    move = ai1.forward(game.board).data.index(max(ai1.forward(game.board).data))
+                    moves = ai1.forward(game.board).data[0]
                 else:
-                    move = ai2.forward(game.board).data.index(max(ai2.forward(game.board).data))
+                    moves = ai2.forward(game.board).data[0]
+                # Choose the highest probability move, if it is not valid, choose the next highest probability move, and so on, if the first move is not valid, the AI only gets partial credit for the move.
+                # Check if the highest probability move is valid
+                first_move = moves.index(max(moves))
+                move = first_move
+
+                while not game.is_valid_move(move):
+                    moves[move] = float("-1")
+                    move = moves.index(max(moves))
+
+                if first_move != move: # Partial Credit for the move when its not its first choice
+                    if game.turn == 1:
+                        ai1.update_fitness(moves[first_move] ** 2)
+                    else:
+                        ai2.update_fitness(moves[first_move] ** 2)
+
                 game.play(move)
+            # Update the fitness of the AIs
             if game.winner == 1: # AI 1 wins
                 # Reward the winning AI
                 ai1.update_fitness(1)
@@ -167,7 +188,7 @@ for generation in range(generations):
 
     # Reset the fitness of the population
     for ai in new_population:
-        ai.reset_fitness()
+        ai.set_fitness(0)
 
     # Update the population
     population = new_population
