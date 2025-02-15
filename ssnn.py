@@ -105,7 +105,7 @@ class SelfLearningNeuralNetwork(object):
             self.connections[connection_id][3] += 1
             source_neuron_id, target_neuron_id, weight, usage = self.connections[connection_id]
             # Check if the target neuron even exists, if not, remove the connection and continue
-            if target_neuron_id not in self.neurons:
+            if target_neuron_id not in self.neurons or source_neuron_id not in self.neurons:
                 del self.connections[connection_id]
                 continue
             self.neurons[target_neuron_id][2] += self.neurons[source_neuron_id][2] * weight + self.neurons[source_neuron_id][0]
@@ -228,6 +228,7 @@ def main():
     TURNS = 1000
 
     for i in range(TURNS):
+        print(f'Turn: {i + 1}')
         game.reset()
         # Play the game
         while not game.is_over():
@@ -248,7 +249,7 @@ def main():
             # Make the move
             game.play(best_move)
             # Print the game
-            game.print_board()
+            # game.print_board()
     
     # Save the Neural Network
     SSNN.save('ssnn.json')
