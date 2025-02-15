@@ -33,6 +33,13 @@ def Sigmoid(x: float) -> float:
         return 0
     return 1 / (1 + math.exp(-x))
 
+def SakshamsLinearCutOff(x: float) -> float:
+    if x > 1:
+        return x * 0.01 + 0.99
+    elif x < -1:
+        return x * 0.01 - 0.99
+    return x
+
 # Output Activation Function, useful for probabilities distribution
 def Softmax(x: gpy.matrix) -> gpy.matrix:
     result = gpy.matrix(rows=1, cols=x.cols)
@@ -106,15 +113,15 @@ class SimpleNeuralNetwork(object):
             if i == 0:
                 final_output = gpy.dot_product(inputs, self.weights[i]) + self.biases[i]
                 # Update the final_output with the activation function
-                final_output = final_output.apply(Sigmoid)
+                final_output = final_output.apply(SakshamsLinearCutOff)
             elif i == self.hidden_layers:
                 # Final Layer
                 final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
-                final_output = final_output.apply(Sigmoid)
+                final_output = final_output.apply(SakshamsLinearCutOff)
             else:
                 # Intermediate Hidden Layer
                 final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
-                final_output = final_output.apply(Sigmoid)
+                final_output = final_output.apply(SakshamsLinearCutOff)
         
         return Softmax(final_output) # Apply the softmax function to get the probabilities
 
