@@ -3,6 +3,8 @@
 The AIs will play against each other and learn from their mistakes, no data collection, just play!
 not sure if this will work, but its worth a try!
 
+This could be repurposed for chess now that I think about it :)
+
 ### Author: Saksham Goel
 
 #### Date: Feb 15, 2025

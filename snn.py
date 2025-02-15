@@ -68,6 +68,11 @@ class SimpleNeuralNetwork(object):
     # returns -> float: the fitness of the neural network
     def get_fitness(self) -> float:
         return self.fitness
+    
+    # update_fitness: updates the fitness of the neural network
+    # fitness -> float: the new fitness of the neural network
+    def update_fitness(self, fitness: float) -> None:
+        self.fitness += fitness
 
     # forward: forward pass of the neural network
     # x -> list: the input list

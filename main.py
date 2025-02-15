@@ -80,8 +80,7 @@ class TicTacToe(object):
         if all([x != 0 for x in self.board]):
             self.over = True
             return True
-        return False
-    
+        return False    
 
 # Training the AI
 
@@ -96,3 +95,52 @@ input_size = 9
 hidden_layers = 3 # Some arbitrary number I chose
 hidden_size = [9, 3, 9] # Some arbitrary numbers I chose, resembles a bottleneck architecture
 output_size = 9
+
+# Initialize the population
+population = []
+
+for i in range(population_size):
+    population.append(snn.SimpleNeuralNetwork(input_size, hidden_layers, hidden_size, output_size))
+
+# Play the games
+for generation in range(generations):
+    for i in range(population_size):
+        for j in range(population_size):
+            if i == j:
+                continue
+            ai1 = population[i]
+            ai2 = population[j]
+            game = TicTacToe()
+            while not game.over:
+                if game.turn == 1:
+                    move = ai1.forward(game.board).data.index(max(ai1.forward(game.board).data))
+                else:
+                    move = ai2.forward(game.board).data.index(max(ai2.forward(game.board).data))
+                game.play(move)
+            if game.winner == 1: # AI 1 wins
+                # Reward the winning AI
+                ai1.update_fitness(1)
+                # Punish the losing AI
+                ai2.update_fitness(-0.5)
+            elif game.winner == -1: # AI 2 wins
+                # Reward the winning
+                ai2.update_fitness(1)
+                # Punish the losing AI
+                ai1.update_fitness(-0.5)
+            elif game.winner == 0: # Draw, better than losing so give both AIs half a point
+                ai1.update_fitness(0.5)
+                ai2.update_fitness(0.5)
+            game.reset()
+
+            
+
+    # Sort the population based on the fitness
+    population.sort(key=lambda x: x.get_fitness(), reverse=True)
+
+    # Print the best AI in the generation
+    print(f"Generation {generation + 1}: Best AI Fitness: {population[0].get_fitness()}")
+
+    # Carry over the top 10% of the population
+    elite = population[:int(elite_percentage * population_size)]
+
+    # Mutate the rest of
