@@ -59,8 +59,8 @@ class SimpleNeuralNetwork(object):
                 self.biases.append(gpy.matrix([[random.random()] for j in range(hidden_size[i])]))
 
     # forward: forward pass of the neural network
-    # x -> gpy.matrix: the input matrix
-    # returns -> gpy.matrix: the output matrix
+    # x -> list: the input list
+    # returns -> gpy.matrix: the output of the neural network
     def forward(self, x: list) -> gpy.matrix:
         inputs = gpy.matrix(data=x)
         final_output = gpy.matrix(rows=1, cols=self.output_size)
@@ -77,5 +77,19 @@ class SimpleNeuralNetwork(object):
                 # Intermediate Hidden Layer
                 final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
                 final_output = final_output.apply(LeakyReLU)
-        
+
         return softmax(final_output) # Apply the softmax function to get the probabilities
+    
+    # mse_loss: the mean squared error loss function, very simple and easy to implement
+    # x -> list: the input list
+    # y -> list: the output list
+    # returns -> float: the loss value
+    def mse_loss(self, x: list, y: list) -> float:
+        y_hat = self.forward(x) # Get the output of the neural network
+        return ((y_hat - gpy.matrix(data=y)).apply(lambda x: x ** 2)).sum().data[0][0]
+
+    # backward: backward pass of the neural network, used for training
+    # x -> list: the input list
+    # y -> list: the output list
+    # learning_rate -> float: the learning rate
+    
