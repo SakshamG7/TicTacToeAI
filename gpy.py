@@ -3,7 +3,7 @@ Saksham's Custom Matrix Implementation (Goel's Python)
 
 Author: Saksham Goel
 Date: Feb 15, 2025
-Version: 1.1
+Version: 1.2
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -136,3 +136,8 @@ def dot_product(mat1: matrix, mat2: matrix) -> matrix:
         else:
             mat2.transpose()
     result = matrix(len(mat1), len(mat2[0]))
+    for i in range(len(mat1)):
+        for j in range(len(mat2[0])):
+            for k in range(len(mat1[0])):
+                result.data[i][j] += mat1.data[i][k] * mat2.data[j][k]
+    return result
