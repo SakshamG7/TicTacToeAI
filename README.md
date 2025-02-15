@@ -1,4 +1,5 @@
 # Saksham's Custom Neural Network Implementation for a Tic Tac Toe AI!
+### Pure Python, Basically no external libraries.
 The AIs will play against each other and learn from their mistakes, no data collection, just play!
 not sure if this will work, but its worth a try!
 
