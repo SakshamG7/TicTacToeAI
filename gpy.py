@@ -69,14 +69,7 @@ class matrix(object):
     
     # __mul__: multiplies two matrices, returns the dot product
     def __mul__(self, other: matrix) -> matrix:
-        if self.cols != other.rows:
-            return None
-        result = matrix(len(self), len(other[0]))
-        for i in range(self.rows):
-            for j in range(other.cols):
-                for k in range(self.cols):
-                    result.data[i][j] += self.data[i][k] * other.data[k][j]
-        return result
+        return dot_product(self, other)
     
     # __str__: returns the string representation of the matrix
     def __str__(self) -> str:
