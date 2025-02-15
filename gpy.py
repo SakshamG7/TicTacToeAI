@@ -2,8 +2,8 @@
 Saksham's Custom Matrix Implementation (Goel's Python)
 
 Author: Saksham Goel
-Date: Feb 12, 2025
-Version: 1.0
+Date: Feb 15, 2025
+Version: 1.1
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -12,7 +12,7 @@ Contact: mail@aceiq.ca
 Location: 
 """
 
-from __future__ import annotations
+from __future__ import annotations # Required for type hinting the class itself
 
 ### matrix class
 # rows: the number of rows in the matrix
