@@ -86,7 +86,10 @@ class SimpleNeuralNetwork(object):
     # returns -> float: the loss value
     def mse_loss(self, x: list, y: list) -> float:
         y_hat = self.forward(x) # Get the output of the neural network
-        return ((y_hat - gpy.matrix(data=y)).apply(lambda x: x ** 2)).sum().data[0][0]
+        loss = 0
+        for i in range(len(y)):
+            loss += (y_hat.data[0][i] - y[i]) ** 2
+        return loss / len(y)
 
     # backward: backward pass of the neural network, used for training
     # x -> list: the input list
