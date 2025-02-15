@@ -23,7 +23,7 @@ import json # useful for saving and loading the neural network
 
 # Activation Function, Just personal preference
 def LeakyReLU(x: float) -> float:
-    return x if x > 0 else 0.01 * x
+    return x if x > 0 else 0.1 * x
 
 def Sigmoid(x: float) -> float:
     # Avoid Overflow
@@ -108,6 +108,9 @@ class SimpleNeuralNetwork(object):
                 # Intermediate Hidden Layer
                 final_output = gpy.dot_product(final_output, self.weights[i]) + self.biases[i]
                 final_output = final_output.apply(LeakyReLU)
+        
+        # Apply sigmoid to the final output
+        final_output = final_output.apply(Sigmoid)
         return Softmax(final_output) # Apply the softmax function to get the probabilities
 
     # copy: returns a copy of the neural network

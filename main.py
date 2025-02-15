@@ -21,10 +21,10 @@ from tictactoe import TicTacToe
 
 # Training the AI
 # Hyperparameters, most numbers are arbitrary
-population_size = 20
+population_size = 100
 generations = 1000
-mutation_rate = 0.05
-elite_percentage = 0.3 # The top 10% of the population will be carried over to the next generation, ensures that the best AI is not lost
+mutation_rate = 0.1
+elite_percentage = 0.1 # The top 10% of the population will be carried over to the next generation, ensures that the best AI is not lost
 model_dir = "models" # Directory to save the models
 
 elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at least two AIs is carried over
@@ -32,7 +32,7 @@ elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at 
 # Parameters
 input_size = 27
 hidden_layers = 3 # Some arbitrary number I chose
-hidden_size = [27, 18, 27] # Some arbitrary numbers I chose
+hidden_size = [27, 9, 18] # Some arbitrary numbers I chose
 output_size = 9
 
 print("Training the AI...")
@@ -82,19 +82,11 @@ for generation in range(generations):
                     moves[move] = float("-1")
                     # Punish the AI for making an invalid move
                     if game.turn == 1:
-                        ai1.update_fitness(-1 * max(generation + 1, generations // 10 + 1) * (1 - moves[first_move]))
+                        ai1.update_fitness(-1 * (1 - moves[first_move]))
                         pass
                     else:
-                        ai2.update_fitness(-1 * max(generation + 1, generations // 10 + 1) * (1 - moves[first_move]))
+                        ai2.update_fitness(-1 * (1 - moves[first_move]))
                     move = moves.index(max(moves))
-
-                if first_move != move: # Partial Credit for the move when its not its first choice
-                    if game.turn == 1:
-                        # ai1.update_fitness(moves[first_move] ** 2)
-                        pass
-                    else:
-                        # ai2.update_fitness(moves[first_move] ** 2)
-                        pass
 
                 game.play(move)
             # Update the fitness of the AIs
@@ -111,7 +103,7 @@ for generation in range(generations):
     
     # Calculate the fitness of the AIs
     for ai in population:
-        ai.update_fitness(max(generation + 1, generations // 10 + 1) * (ai.wins + ai.draws // 2) / (ai.losses + 1))
+        ai.update_fitness((ai.wins + ai.draws // 2) - ai.losses ** 2)
 
     # Sort the population based on the fitness
     population.sort(key=lambda x: x.get_fitness(), reverse=True)
