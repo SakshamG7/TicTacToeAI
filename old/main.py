@@ -15,7 +15,7 @@ Location: Canada, ON, Oakville
 """
 
 # Required Libraries
-import snn
+import ssnn
 import random
 from tictactoe import TicTacToe
 import math
@@ -44,7 +44,7 @@ population = []
 best_fitness = float("-inf")
 
 for i in range(population_size):
-    population.append(snn.SimpleNeuralNetwork(input_size, hidden_layers, hidden_size, output_size))
+    population.append(ssnn.SimpleNeuralNetwork(input_size, hidden_layers, hidden_size, output_size))
 
 # First encourage playing legal moves, then encourage winning, then encourage not losing
 
