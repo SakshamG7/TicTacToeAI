@@ -59,6 +59,7 @@ class SelfLearningNeuralNetwork(object):
     def add_connection(self, connection_id, source_neuron_id, target_neuron_id, weight):
         self.connections[connection_id] = (source_neuron_id, target_neuron_id, weight)
     
+    # Node: This is my messiest work I have ever done, I am sorry
     # Forward Propagation
     # inputs: Inputs to the Neural Network
     # expected_outputs: Expected Number Outputs
@@ -71,6 +72,9 @@ class SelfLearningNeuralNetwork(object):
                 self.add_neuron(new_id, random.random())
                 self.input_ids.append(new_id)
                 self.input_size += 1
+                # Connect this input to a random output neuron
+                n2 = random.choice(self.output_ids)
+                self.add_connection(max(self.connections.keys()) + 1, new_id, n2, random.uniform(-1, 1))
         elif len(inputs) > self.input_size:
             # Padding, fill with 0s
             for i in range(len(inputs) - self.input_size):
