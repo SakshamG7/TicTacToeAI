@@ -16,6 +16,7 @@ Location: Canada, ON, Oakville
 
 # Required Libraries
 import snn
+import random
 
 # Tic Tac Toe Game
 class TicTacToe(object):
@@ -89,6 +90,9 @@ population_size = 100
 generations = 1000
 mutation_rate = 0.05
 elite_percentage = 0.1 # The top 10% of the population will be carried over to the next generation, ensures that the best AI is not lost
+model_dir = "models" # Directory to save the models
+
+elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at least two AIs is carried over
 
 # Parameters
 input_size = 9
@@ -132,8 +136,6 @@ for generation in range(generations):
                 ai2.update_fitness(0.5)
             game.reset()
 
-            
-
     # Sort the population based on the fitness
     population.sort(key=lambda x: x.get_fitness(), reverse=True)
 
@@ -141,6 +143,18 @@ for generation in range(generations):
     print(f"Generation {generation + 1}: Best AI Fitness: {population[0].get_fitness()}")
 
     # Carry over the top 10% of the population
-    elite = population[:int(elite_percentage * population_size)]
+    elite = population[:elite_cutoff] # Ensure that at least one AI is carried over
 
-    # Mutate the rest of
+    # Create the next generation via crossover and mutation
+    new_population = elite.copy()
+    for i in range(population_size - len(elite)):
+        # pick two random parents, ensure they are not the same
+        parent1 = random.choice(elite)
+        elite.remove(parent1)
+        parent2 = random.choice(elite)
+        elite.append(parent1)
+        child = parent1.crossover(parent2)
+        child.mutate(mutation_rate)
+        new_population.append(child)
+
+    population = new_population

@@ -19,6 +19,7 @@ from __future__ import annotations # Required for type hinting the class itself
 import gpy
 import math
 import random
+import json # useful for saving and loading the neural network
 
 # Activation Function, Just personal preference
 def LeakyReLU(x: float) -> float:
@@ -139,3 +140,31 @@ class SimpleNeuralNetwork(object):
             for j in range(self.biases[i].rows):
                     if random.uniform(-1, 1) < mutation_rate:
                         self.biases[i].data[j][0] += random.uniform(-1, 1)
+
+    # save: saves the neural network to a file
+    # filename -> str: the filename to save the neural network to
+    def save(self, filename: str) -> None:
+        data = {
+            "input_size": self.input_size,
+            "output_size": self.output_size,
+            "hidden_layers": self.hidden_layers,
+            "hidden_size": self.hidden_size,
+            "fitness": self.fitness,
+            "weights": [x.data for x in self.weights],
+            "biases": [x.data for x in self.biases]
+        }
+
+        with open(filename, "w") as file:
+            json.dump(data, file)
+
+# load: loads a neural network from a file
+# filename -> str: the filename to load the neural network from
+# returns -> SimpleNeuralNetwork: the loaded neural network
+def load(filename: str) -> SimpleNeuralNetwork:
+    with open(filename, "r") as file:
+        data = json.load(file)
+    nn = SimpleNeuralNetwork(data["input_size"], data["hidden_layers"], data["hidden_size"], data["output_size"])
+    nn.fitness = data["fitness"]
+    nn.weights = [gpy.matrix(data=x) for x in data["weights"]]
+    nn.biases = [gpy.matrix(data=x) for x in data["biases"]]
+    return nn
