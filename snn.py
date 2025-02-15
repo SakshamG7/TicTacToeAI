@@ -128,13 +128,13 @@ class SimpleNeuralNetwork(object):
         for i in range(len(self.weights)):
             for j in range(self.weights[i].rows):
                 for k in range(self.weights[i].cols):
-                    if random.uniform(-1, 1) < 0.5:
+                    if random.random() < 0.5:
                         child.weights[i].data[j][k] = partner.weights[i].data[j][k]
 
         # Crossover the biases
         for i in range(len(self.biases)):
             for j in range(self.biases[i].rows):
-                    if random.uniform(-1, 1) < 0.5:
+                    if random.random() < 0.5:
                         child.biases[i].data[j][0] = partner.biases[i].data[j][0] # shape is (rows, 1)
 
         return child
@@ -146,12 +146,12 @@ class SimpleNeuralNetwork(object):
         for i in range(len(self.weights)):
             for j in range(self.weights[i].rows):
                 for k in range(self.weights[i].cols):
-                    if random.uniform(-1, 1) < mutation_rate:
+                    if random.random() < mutation_rate:
                         self.weights[i].data[j][k] += random.uniform(-1, 1)
 
         for i in range(len(self.biases)):
             for j in range(self.biases[i].rows):
-                    if random.uniform(-1, 1) < mutation_rate:
+                    if random.random() < mutation_rate:
                         self.biases[i].data[j][0] += random.uniform(-1, 1)
 
     # save: saves the neural network to a file
