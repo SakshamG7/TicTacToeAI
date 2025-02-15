@@ -195,6 +195,9 @@ for generation in range(generations):
     # Reset the fitness of the population
     for ai in new_population:
         ai.set_fitness(0)
+        ai.wins = 0
+        ai.losses = 0
+        ai.draws = 0
 
     # Update the population
     population = new_population
