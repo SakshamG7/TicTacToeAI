@@ -21,7 +21,7 @@ from tictactoe import TicTacToe
 
 # Training the AI
 # Hyperparameters, most numbers are arbitrary
-population_size = 10
+population_size = 20
 generations = 1000
 mutation_rate = 0.05
 elite_percentage = 0.3 # The top 10% of the population will be carried over to the next generation, ensures that the best AI is not lost
@@ -30,15 +30,17 @@ model_dir = "models" # Directory to save the models
 elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at least two AIs is carried over
 
 # Parameters
-input_size = 9
+input_size = 27
 hidden_layers = 3 # Some arbitrary number I chose
-hidden_size = [9, 3, 9] # Some arbitrary numbers I chose, resembles a bottleneck architecture
+hidden_size = [27, 18, 27] # Some arbitrary numbers I chose
 output_size = 9
 
 print("Training the AI...")
 
 # Initialize the population
 population = []
+
+best_fitness = float("-inf")
 
 for i in range(population_size):
     population.append(snn.SimpleNeuralNetwork(input_size, hidden_layers, hidden_size, output_size))
@@ -53,10 +55,24 @@ for generation in range(generations):
             ai2 = population[j]
             game = TicTacToe()
             while not game.over:
+                input_data = []
+                for i in game.board:
+                    if i == 0:
+                        input_data.append(0)
+                        input_data.append(0)
+                        input_data.append(1)
+                    elif i == 1:
+                        input_data.append(0)
+                        input_data.append(1)
+                        input_data.append(0)
+                    else:
+                        input_data.append(1)
+                        input_data.append(0)
+                        input_data.append(0)
                 if game.turn == 1:
-                    moves = ai1.forward(game.board).data[0]
+                    moves = ai1.forward(input_data).data[0]
                 else:
-                    moves = ai2.forward(game.board).data[0]
+                    moves = ai2.forward(input_data).data[0]
                 # Choose the highest probability move, if it is not valid, choose the next highest probability move, and so on, if the first move is not valid, the AI only gets partial credit for the move.
                 # Check if the highest probability move is valid
                 first_move = moves.index(max(moves))
@@ -64,6 +80,12 @@ for generation in range(generations):
 
                 while not game.is_valid_move(move):
                     moves[move] = float("-1")
+                    # Punish the AI for making an invalid move
+                    if game.turn == 1:
+                        ai1.update_fitness(-1 * max(generation + 1, generations // 10 + 1) * (1 - moves[first_move]))
+                        pass
+                    else:
+                        ai2.update_fitness(-1 * max(generation + 1, generations // 10 + 1) * (1 - moves[first_move]))
                     move = moves.index(max(moves))
 
                 if first_move != move: # Partial Credit for the move when its not its first choice
@@ -89,14 +111,16 @@ for generation in range(generations):
     
     # Calculate the fitness of the AIs
     for ai in population:
-        ai.set_fitness((ai.wins + ai.draws // 2) / (ai.losses + 1))
+        ai.update_fitness(max(generation + 1, generations // 10 + 1) * (ai.wins + ai.draws // 2) / (ai.losses + 1))
 
     # Sort the population based on the fitness
     population.sort(key=lambda x: x.get_fitness(), reverse=True)
 
     # Check if the best AI in this generation is better than the best AI in the previous generation
     # Fitness will change every generation, so we can only trust that the latest AI is the best, especially since the previous elite models are carried over, fitness will lower as there will be more draws
-    population[0].save(f"{model_dir}/best_ai_gen_{generation}_fitness_{population[0].get_fitness()}.json")
+    if population[0].get_fitness() > best_fitness:
+        population[0].save(f"{model_dir}/best_ai_gen_{generation}_fitness_{population[0].get_fitness()}.json")
+        best_fitness = population[0].get_fitness()
 
     # Print the best AI in the generation
     print(f"Generation {generation + 1}: Best AI Fitness: {population[0].get_fitness()}")
@@ -127,7 +151,6 @@ for generation in range(generations):
     # Update the population
     population = new_population
 
-# Save the best AI
 population[0].save(f"{model_dir}/best_ai_gen_final.json")
 
 # End of Training
