@@ -44,6 +44,21 @@ class SimpleNeuralNetwork(object):
         self.hidden_layers = hidden_layers
         self.hidden_size = hidden_size
         # Initialize the weights and biases with random values
+        self.weights = []
+        self.biases = []
+
+        for i in range(hidden_layers + 1):
+            if i == 0:
+                self.weights.append(gpy.matrix([[random.random() for j in range(hidden_size[i])] for k in range(input_size)]))
+                self.biases.append(gpy.matrix([[random.random()] for j in range(hidden_size[i])]))
+            elif i == hidden_layers:
+                self.weights.append(gpy.matrix([[random.random() for j in range(output_size)] for k in range(hidden_size[i - 1])]))
+                self.biases.append(gpy.matrix([[random.random()] for j in range(output_size)]))
+            else:
+                self.weights.append(gpy.matrix([[random.random() for j in range(hidden_size[i])] for k in range(hidden_size[i - 1])]))
+                self.biases.append(gpy.matrix([[random.random()] for j in range(hidden_size[i])]))
+        
+        
 
     # forward: forward pass of the neural network
     # x -> gpy.matrix: the input matrix
