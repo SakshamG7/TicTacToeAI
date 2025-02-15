@@ -79,20 +79,3 @@ class SimpleNeuralNetwork(object):
                 final_output = final_output.apply(LeakyReLU)
 
         return softmax(final_output) # Apply the softmax function to get the probabilities
-    
-    # mse_loss: the mean squared error loss function, very simple and easy to implement
-    # x -> list: the input list
-    # y -> list: the output list
-    # returns -> float: the loss value
-    def mse_loss(self, x: list, y: list) -> float:
-        y_hat = self.forward(x) # Get the output of the neural network
-        loss = 0
-        for i in range(len(y)):
-            loss += (y_hat.data[0][i] - y[i]) ** 2
-        return loss / len(y)
-
-    # backward: backward pass of the neural network, used for training
-    # x -> list: the input list
-    # y -> list: the output list
-    # learning_rate -> float: the learning rate
-    
