@@ -22,7 +22,7 @@ from tictactoe import TicTacToe
 # Training the AI
 # Hyperparameters, most numbers are arbitrary
 population_size = 100
-generations = 1000
+generations = 1000000
 mutation_rate = 0.1
 elite_percentage = 0.1 # The top 10% of the population will be carried over to the next generation, ensures that the best AI is not lost
 model_dir = "models" # Directory to save the models
@@ -30,9 +30,9 @@ model_dir = "models" # Directory to save the models
 elite_cutoff = max(2, int(elite_percentage * population_size)) # Ensure that at least two AIs is carried over
 
 # Parameters
-input_size = 27
+input_size = 9
 hidden_layers = 3 # Some arbitrary number I chose
-hidden_size = [27 * 3, 27 * 2, 27 * 1] # Some arbitrary numbers I chose
+hidden_size = [9, 18, 27] # Some arbitrary numbers I chose
 output_size = 9
 
 print("Training the AI...")
@@ -51,27 +51,12 @@ for i in range(population_size):
 for generation in range(generations):
     for i in range(population_size):
         for j in range(population_size):
-            if i == j:
-                continue
             invalid_move = False
             ai1 = population[i]
             ai2 = population[j]
             game = TicTacToe()
             while not game.over:
-                input_data = []
-                for i in game.board:
-                    if i == 0:
-                        input_data.append(0)
-                        input_data.append(0)
-                        input_data.append(1)
-                    elif i == 1:
-                        input_data.append(0)
-                        input_data.append(1)
-                        input_data.append(0)
-                    else:
-                        input_data.append(1)
-                        input_data.append(0)
-                        input_data.append(0)
+                input_data = game.board
                 if game.turn == 1:
                     moves = ai1.forward(input_data).data[0]
                 else:
@@ -80,18 +65,18 @@ for generation in range(generations):
                 # Check if the highest probability move is valid
                 first_move = moves.index(max(moves))
                 move = first_move
-
+                thought_away_from_first_move = 0
                 while not game.is_valid_move(move):
                     moves[move] = float("-1")
-                    # Punish the AI for making an invalid move
-                    if game.turn == 1:
-                        ai1.update_fitness(-1 * (1 - moves[first_move]))
-                        pass
-                    else:
-                        ai2.update_fitness(-1 * (1 - moves[first_move]))
                     move = moves.index(max(moves))
+                    thought_away_from_first_move += 1
                 if not game.is_valid_move(first_move):
                     invalid_move = True
+                    # Punish the AI for making an invalid move and by how far it was from the first move
+                    if game.turn == 1:
+                        ai1.update_fitness(-thought_away_from_first_move)
+                    else:
+                        ai2.update_fitness(-thought_away_from_first_move)
                     break # End the game if the AI makes an invalid move
 
                 game.play(move)
@@ -112,7 +97,7 @@ for generation in range(generations):
     
     # Calculate the fitness of the AIs
     for ai in population:
-        ai.update_fitness((ai.wins + ai.draws // 2) - ai.losses ** 2)
+        ai.update_fitness((ai.wins + ai.draws // 2) - ai.losses * 4)
 
     # Sort the population based on the fitness
     population.sort(key=lambda x: x.get_fitness(), reverse=True)
