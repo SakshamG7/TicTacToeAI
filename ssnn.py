@@ -4,8 +4,8 @@ Saksham's Self Learning Neural Network
 This Neural Network will play tic-tac-toe and maybe chess, to learn from its mistakes and improve its gameplay
 
 Author: Saksham Goel
-Date: Feb 15, 2025
-Version: 1.0
+Date: Feb 17, 2025
+Version: 2.0
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -70,9 +70,10 @@ class SelfLearningNeuralNetwork(object):
         if len(inputs) != self.input_size:
             raise ValueError('Invalid input size')
         # Take in the inputs and set the values of the input neurons
+        c = 0
         for i in self.input_ids:
-            self.neurons[i][2] = inputs[i]
-
+            self.neurons[i][2] = inputs[c]
+            c += 1
         # Propagate values via connections (iterate over a copy of the keys), I just relized this is a completly wrong but new implementation for a forward pass, lets see how it goes!
         for connection_id in list(self.connections.keys()):
             self.connections[connection_id][3] += 1
@@ -221,24 +222,32 @@ class SelfLearningNeuralNetwork(object):
 
     def save(self, filename: str):
         with open(filename, 'w') as file:
-            json.dump({
-                'input_size': self.input_size,
-                'output_size': self.output_size,
+            data = {
                 'neurons': self.neurons,
                 'connections': self.connections,
                 'input_ids': self.input_ids,
-                'output_ids': self.output_ids
-            }, file)
-
+                'output_ids': self.output_ids,
+                'fitness': self.fitness,
+                'wins': self.wins,
+                'losses': self.losses,
+                'draws': self.draws,
+                'legal_count': self.legal_count
+            }
+            json.dump(data, file)
+    
     def load(self, filename: str):
         with open(filename, 'r') as file:
             data = json.load(file)
-            self.input_size = data['input_size']
-            self.output_size = data['output_size']
-            self.neurons = data['neurons']
-            self.connections = data['connections']
+            self.neurons = {int(k): v for k, v in data['neurons'].items()}
+            self.connections = {int(k): [data['connections'][k][0], data['connections'][k][1], data['connections'][k][2], data['connections'][k][3]] for k in data['connections']}
             self.input_ids = data['input_ids']
             self.output_ids = data['output_ids']
+            self.fitness = data['fitness']
+            self.wins = data['wins']
+            self.losses = data['losses']
+            self.draws = data['draws']
+            self.legal_count = data['legal_count']
+
 
 
 def get_top_move(moves: list, game: TicTacToe):
@@ -253,8 +262,8 @@ def get_top_move(moves: list, game: TicTacToe):
 def train():
     game = TicTacToe()
     # Parameters
-    POPULATION_SIZE = 100
-    ELITE_SIZE = 10
+    POPULATION_SIZE = 20
+    ELITE_SIZE = 4
     GENERATIONS = 100
     MUTATION_RATE = 0.1
 
@@ -367,11 +376,14 @@ def play(filename):
         if user_turn:
             game.print_board()
             move = int(input('Enter your move (1-9): '))
+            if not game.is_valid_move(move - 1):
+                print('Invalid move!')
+                continue
             game.play(move - 1)
         else:
             state = game.board
-            moves = SSNN.forward(state, 9, 0.9)
-            best_move = get_top_move(moves)
+            moves = SSNN.forward(state)
+            best_move = get_top_move(moves, game)
             game.play(best_move)
         user_turn = not user_turn
 
@@ -385,5 +397,5 @@ def play(filename):
 
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
-    train()
-    # play('ssnn.json')
+    # train()
+    play('ssnn.json')
