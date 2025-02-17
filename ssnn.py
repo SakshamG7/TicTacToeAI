@@ -42,6 +42,10 @@ class SelfLearningNeuralNetwork(object):
         self.input_ids = []     # List of input neuron IDs
         self.output_ids = []    # List of output neuron IDs
         self.fitness = 0        # Fitness of the Neural Network, useful for NEAT
+        self.wins = 0           # Number of wins
+        self.losses = 0         # Number of losses
+        self.draws = 0          # Number of draws
+        self.legal_count = 0    # Number of legal moves made by the Neural Network
 
         # Create input neurons
         for i in range(input_size):
@@ -63,6 +67,12 @@ class SelfLearningNeuralNetwork(object):
 
 
     def forward(self, inputs: list):
+        if len(inputs) != self.input_size:
+            raise ValueError('Invalid input size')
+        # Take in the inputs and set the values of the input neurons
+        for i in range(self.input_ids):
+            self.neurons[i][2] = inputs[i]
+
         # Propagate values via connections (iterate over a copy of the keys), I just relized this is a completly wrong but new implementation for a forward pass, lets see how it goes!
         for connection_id in list(self.connections.keys()):
             self.connections[connection_id][3] += 1
@@ -275,6 +285,7 @@ def train():
                         best_move = get_top_move(moves, game)
                         if top_move == best_move:
                             NN.fitness += 100 # Reward for making the best move
+                            NN.legal_count += 1
                         else:
                             NN.fitness -= 100 # Greatly penalize for making an illegal move
                         game.play(best_move)
@@ -285,17 +296,28 @@ def train():
                         best_move = get_top_move(moves, game)
                         if top_move == best_move:
                             opponent.fitness += 100 # Reward for making the best move
+                            opponent.legal_count += 1
                         else:
                             opponent.fitness -= 100 # Greatly penalize for an illegal move
                         game.play(best_move)
                     user_turn = not user_turn
-                # Reward the winner
+                # Reward the winner, penalize the loser, and partially reward a draw
                 # game.winner, if X wins, returns 1, if O wins, returns -1, if draw, returns 0
-                NN.fitness += game.winner * 10
-                opponent.fitness -= game.winner * 10
                 if game.winner == 0:
+                    NN.draws += 1
+                    opponent.draws += 1
                     NN.fitness += 5
                     opponent.fitness += 5
+                elif game.winner == 1:
+                    NN.wins += 1
+                    opponent.losses += 1
+                    NN.fitness += 10
+                    opponent.fitness -= 10
+                else:
+                    NN.losses += 1
+                    opponent.wins += 1
+                    NN.fitness -= 10
+                    opponent.fitness += 10
 
         population.sort(key=lambda x: x.fitness, reverse=True)
         
@@ -306,6 +328,8 @@ def train():
 
         # Print the best Neural Network's fitness
         print(f'Generation {generation + 1}, Fitness: {elite_population[0].fitness / POPULATION_SIZE}')
+        # Print the best Neural Network's wins, losses, and draws
+        print(f'Wins: {elite_population[0].wins}, Losses: {elite_population[0].losses}, Draws: {elite_population[0].draws}, Legal Moves: {elite_population[0].legal_count}')
 
         # Crossover the elite population to create the next generation and keep the elite population
         new_population = elite_population.copy()
@@ -316,8 +340,15 @@ def train():
             elite_population.append(parent1) # Add back the removed parent
             child = parent1.crossover(parent2)
             child.mutate(MUTATION_RATE)
-            child.fitness = 0
             new_population.append(child)
+        
+        # Reset the stats of the new population
+        for NN in new_population:
+            NN.fitness = 0
+            NN.wins = 0
+            NN.losses = 0
+            NN.draws = 0
+            NN.legal_count = 0
         
         population = new_population.copy()
 
