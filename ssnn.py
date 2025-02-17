@@ -61,10 +61,6 @@ def softmax(x):
     e_x = [math.exp(i) for i in x]
     return [i / sum(e_x) for i in e_x]
 
-import math
-import random
-import json
-
 def SakshamsLinearCutOff(x: float) -> float:
     diff = 0.01
     cut_off = 1
