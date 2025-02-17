@@ -20,7 +20,7 @@ import json  # For saving and loading the Neural Network
 from tictactoe import TicTacToe
 
 # Activation Function
-def SakshamsLinearCutOff(x: float) -> float:
+def SakshamsLinearCutOff_v1(x: float) -> float:
     diff = 0.01
     cut_off = 1
     if x > cut_off:
@@ -28,6 +28,16 @@ def SakshamsLinearCutOff(x: float) -> float:
     elif x < -cut_off:
         return x * diff - (cut_off - diff)
     return x
+
+def SakshamsLinearCutOff(x: float) -> float:
+    diff = 0.1
+    cut_off = 1
+    if x > cut_off:
+        return x * diff + (cut_off - diff)
+    elif x < -cut_off:
+        return x * diff - (cut_off - diff)
+    return x
+
 
 def softmax(x):
     e_x = [math.exp(i) for i in x]
@@ -507,4 +517,4 @@ def play(filename):
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
     train()
-    # play('ssnn.json')
+    # play('models/ssnn_gen_136_fit_99.00352337514254.json')
