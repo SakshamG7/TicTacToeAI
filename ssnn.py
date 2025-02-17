@@ -63,7 +63,7 @@ class SelfLearningNeuralNetwork(object):
 
 
     def forward(self, inputs: list):
-        # Propagate values via connections (iterate over a copy of the keys)
+        # Propagate values via connections (iterate over a copy of the keys), I just relized this is a completly wrong but new implementation for a forward pass, lets see how it goes!
         for connection_id in list(self.connections.keys()):
             self.connections[connection_id][3] += 1
             source_neuron_id, target_neuron_id, weight, usage = self.connections[connection_id]
@@ -71,7 +71,7 @@ class SelfLearningNeuralNetwork(object):
             if source_neuron_id not in self.neurons or target_neuron_id not in self.neurons:
                 del self.connections[connection_id]
                 continue
-            self.neurons[target_neuron_id][2] += self.neurons[source_neuron_id][2] * weight + self.neurons[source_neuron_id][0]
+            self.neurons[target_neuron_id][2] += self.neurons[source_neuron_id][2] * weight + self.neurons[source_neuron_id][0] # Update target's value
             self.neurons[target_neuron_id][2] = SakshamsLinearCutOff(self.neurons[target_neuron_id][2])
             self.neurons[target_neuron_id][1] += 1
             self.neurons[source_neuron_id][1] += 1
