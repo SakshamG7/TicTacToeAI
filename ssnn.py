@@ -33,87 +33,200 @@ def softmax(x):
     e_x = [math.exp(i) for i in x]
     return [i / sum(e_x) for i in e_x]
 
+
+import math
+import random
+import json
+
+def SakshamsLinearCutOff(x: float) -> float:
+    diff = 0.01
+    cut_off = 1
+    if x > cut_off:
+        return x * diff + (cut_off - diff)
+    elif x < -cut_off:
+        return x * diff - (cut_off - diff)
+    return x
+
+def softmax(x):
+    e_x = [math.exp(i) for i in x]
+    return [i / sum(e_x) for i in e_x]
+
+import math
+import random
+import json
+
+def SakshamsLinearCutOff(x: float) -> float:
+    diff = 0.01
+    cut_off = 1
+    if x > cut_off:
+        return x * diff + (cut_off - diff)
+    elif x < -cut_off:
+        return x * diff - (cut_off - diff)
+    return x
+
+def softmax(x):
+    e_x = [math.exp(i) for i in x]
+    return [i / sum(e_x) for i in e_x]
+
 class SelfLearningNeuralNetwork(object):
     def __init__(self, input_size: int = 9, output_size: int = 9):
         self.input_size = input_size
         self.output_size = output_size
-        self.neurons = {}       # Dictionary: neuron_id -> [bias, usage, value]
-        self.connections = {}   # Dictionary: connection_id -> [source_neuron_id, target_neuron_id, weight, usage]
+        self.neurons = {}       # neuron_id -> [bias, usage, value]
+        self.connections = {}   # connection_id -> [source_neuron_id, target_neuron_id, weight, usage]
         self.input_ids = []     # List of input neuron IDs
         self.output_ids = []    # List of output neuron IDs
-        self.fitness = 0        # Fitness of the Neural Network, useful for NEAT
-        self.wins = 0           # Number of wins
-        self.losses = 0         # Number of losses
-        self.draws = 0          # Number of draws
-        self.legal_count = 0    # Number of legal moves made by the Neural Network
+        self.fitness = 0
+        self.wins = 0
+        self.losses = 0
+        self.draws = 0
+        self.legal_count = 0
+        self.total_moves = 0
 
-        # Create input neurons
+        # Create input neurons.
         for i in range(input_size):
             self.add_neuron(i, 0)
             self.input_ids.append(i)
 
-        # Create output neurons
+        # Create output neurons.
         for i in range(input_size, input_size + output_size):
             self.add_neuron(i, 0)
             self.output_ids.append(i)
 
-
     def add_neuron(self, neuron_id: int, bias):
         self.neurons[neuron_id] = [bias, 0, 0]
-
 
     def add_connection(self, connection_id, source_neuron_id, target_neuron_id, weight):
         self.connections[connection_id] = [source_neuron_id, target_neuron_id, weight, 0]
 
+    def creates_cycle(self, source: int, target: int) -> bool:
+        """
+        Checks whether adding a connection from source to target would create a cycle.
+        A depth-first search (DFS) is performed starting from the target to see if we can reach the source.
+        """
+        visited = set()
+
+        def dfs(node):
+            if node == source:
+                return True
+            visited.add(node)
+            for conn in self.connections.values():
+                if conn[0] == node:
+                    next_node = conn[1]
+                    if next_node not in visited and dfs(next_node):
+                        return True
+            return False
+
+        return dfs(target)
+
+    def topological_sort(self):
+        """
+        Returns a topologically sorted list of neuron IDs if the network is acyclic.
+        If a cycle is detected, returns None.
+        """
+        in_degree = {neuron: 0 for neuron in self.neurons}
+        for conn in self.connections.values():
+            target = conn[1]
+            if target in in_degree:
+                in_degree[target] += 1
+
+        queue = [n for n in in_degree if in_degree[n] == 0]
+        order = []
+        while queue:
+            current = queue.pop(0)
+            order.append(current)
+            for conn in self.connections.values():
+                if conn[0] == current:
+                    target = conn[1]
+                    if target not in in_degree:
+                        continue
+                    in_degree[target] -= 1
+                    if in_degree[target] == 0:
+                        queue.append(target)
+        return order if len(order) == len(self.neurons) else None
 
     def forward(self, inputs: list):
+        """
+        Executes a forward pass. If the network is acyclic, neurons are processed in topological order.
+        Otherwise, iterative updates are performed until convergence.
+        """
         if len(inputs) != self.input_size:
             raise ValueError('Invalid input size')
-        # Take in the inputs and set the values of the input neurons
-        c = 0
-        for i in self.input_ids:
-            self.neurons[i][2] = inputs[c]
-            c += 1
-        # Propagate values via connections (iterate over a copy of the keys), I just relized this is a completly wrong but new implementation for a forward pass, lets see how it goes!
-        for connection_id in list(self.connections.keys()):
-            self.connections[connection_id][3] += 1
-            source_neuron_id, target_neuron_id, weight, usage = self.connections[connection_id]
-            # Remove connection if source or target is missing
-            if source_neuron_id not in self.neurons or target_neuron_id not in self.neurons:
-                del self.connections[connection_id]
-                continue
-            self.neurons[target_neuron_id][2] += self.neurons[source_neuron_id][2] * weight + self.neurons[source_neuron_id][0] # Update target's value
-            self.neurons[target_neuron_id][2] = SakshamsLinearCutOff(self.neurons[target_neuron_id][2])
-            self.neurons[target_neuron_id][1] += 1
-            self.neurons[source_neuron_id][1] += 1
-    
-        # Collect outputs from designated output neurons
-        outputs = []
-        for output_id in self.output_ids:
-            outputs.append(self.neurons[output_id][2])
-        outputs = softmax(outputs)
-        return outputs
-    
 
-    # Crossover the Neural Network with another Neural Network
-    # parent: the other Neural Network to crossover with
+        # Reset neuron values.
+        for neuron_id in self.neurons:
+            self.neurons[neuron_id][2] = 0
+
+        # Set input neuron values.
+        for idx, neuron_id in enumerate(self.input_ids):
+            self.neurons[neuron_id][2] = inputs[idx]
+
+        order = self.topological_sort()
+        if order is not None:
+            # Propagate in topological order.
+            for neuron_id in order:
+                if neuron_id in self.input_ids:
+                    continue
+                total_input = self.neurons[neuron_id][0]  # Start with bias.
+                for conn in self.connections.values():
+                    if conn[1] == neuron_id:
+                        source_id = conn[0]
+                        if source_id not in self.neurons:
+                            continue
+                        total_input += self.neurons[source_id][2] * conn[2]
+                self.neurons[neuron_id][2] = SakshamsLinearCutOff(total_input)
+        else:
+            # Cycle detected: use iterative updates.
+            max_iterations = 10
+            epsilon = 1e-3
+            for _ in range(max_iterations):
+                delta = 0
+                updated_values = {}
+                for neuron_id in self.neurons:
+                    if neuron_id in self.input_ids:
+                        updated_values[neuron_id] = self.neurons[neuron_id][2]
+                    else:
+                        total_input = self.neurons[neuron_id][0]
+                        for conn in self.connections.values():
+                            if conn[1] == neuron_id:
+                                source_id = conn[0]
+                                if source_id not in self.neurons:
+                                    continue
+                                total_input += self.neurons[source_id][2] * conn[2]
+                        new_value = SakshamsLinearCutOff(total_input)
+                        updated_values[neuron_id] = new_value
+                        delta = max(delta, abs(new_value - self.neurons[neuron_id][2]))
+                for neuron_id in self.neurons:
+                    self.neurons[neuron_id][2] = updated_values[neuron_id]
+                if delta < epsilon:
+                    break
+
+        outputs = [self.neurons[n][2] for n in self.output_ids]
+        return softmax(outputs)
+
     def crossover(self, parent):
+        """
+        Performs crossover with another network to produce a child network.
+        Connections are only added if they do not create a cycle.
+        """
         child = SelfLearningNeuralNetwork(self.input_size, self.output_size)
-        # Cross over shared neurons
+        # Cross over shared neurons.
         for neuron_id in self.neurons:
             if neuron_id in parent.neurons:
-                if random.random() < 0.5:
-                    child.neurons[neuron_id] = self.neurons[neuron_id].copy()
-                else:
-                    child.neurons[neuron_id] = parent.neurons[neuron_id].copy()
-        # Cross over shared connections
+                child.neurons[neuron_id] = (
+                    self.neurons[neuron_id].copy() if random.random() < 0.5 
+                    else parent.neurons[neuron_id].copy()
+                )
+
+        # Cross over shared connections with cycle prevention.
         for connection_id in self.connections:
             if connection_id in parent.connections:
-                if random.random() < 0.5:
-                    child.connections[connection_id] = self.connections[connection_id].copy()
-                else:
-                    child.connections[connection_id] = parent.connections[connection_id].copy()
-        # Take the remaining neurons from the fitter parent
+                candidate = self.connections[connection_id] if random.random() < 0.5 else parent.connections[connection_id]
+                source, target, weight, usage = candidate
+                if source in child.neurons and target in child.neurons and not child.creates_cycle(source, target):
+                    child.connections[connection_id] = candidate.copy()
+
+        # Add remaining neurons from the fitter parent.
         if self.fitness > parent.fitness:
             for neuron_id in self.neurons:
                 if neuron_id not in child.neurons:
@@ -122,103 +235,102 @@ class SelfLearningNeuralNetwork(object):
             for neuron_id in parent.neurons:
                 if neuron_id not in child.neurons:
                     child.neurons[neuron_id] = parent.neurons[neuron_id].copy()
-        
-        # Take the remaining connections from the fitter parent, also check if they are valid
+
+        # Add remaining connections from the fitter parent with cycle prevention.
         if self.fitness > parent.fitness:
             for connection_id in self.connections:
                 if connection_id not in child.connections:
                     src, tgt, _, _ = self.connections[connection_id]
-                    if src in child.neurons and tgt in child.neurons:
+                    if src in child.neurons and tgt in child.neurons and not child.creates_cycle(src, tgt):
                         child.connections[connection_id] = self.connections[connection_id].copy()
         else:
             for connection_id in parent.connections:
                 if connection_id not in child.connections:
                     src, tgt, _, _ = parent.connections[connection_id]
-                    if src in child.neurons and tgt in child.neurons:
+                    if src in child.neurons and tgt in child.neurons and not child.creates_cycle(src, tgt):
                         child.connections[connection_id] = parent.connections[connection_id].copy()
 
-        # Update input and output neuron IDs
         child.input_ids = self.input_ids.copy()
         child.output_ids = self.output_ids.copy()
-
         return child
 
-
-    # Mutate the Neural Network
-    # Add new connections, neurons, remove connections, neurons, mutate weights and biases
     def mutate(self, mutation_rate: float = 0.1):
-        # Add new connections to random input-output pairs
+        """
+        Mutates the network by adding new connections/neurons or modifying existing ones.
+        New connections are added only if they do not create a cycle.
+        """
+        # Add new connections to random input-output pairs.
         for i in range(random.randint(1, 1 + len(self.neurons) // 2)):
             source_neuron_id = random.choice(self.input_ids)
             target_neuron_id = random.choice(self.output_ids)
-            weight = random.uniform(-1, 1)
-            connection_id = max(self.connections.keys()) + 1 if self.connections else 0
-            self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
-
-            # 50% chance: add a new hidden neuron between two random neurons
-            if random.random() < 0.5:
-                new_id = max(self.neurons.keys()) + 1
-                n1 = random.choice(list(self.neurons.keys()))
-                n2 = random.choice(list(self.neurons.keys()))
-                while n1 == n2:
-                    n2 = random.choice(list(self.neurons.keys()))
-                self.add_neuron(new_id, random.random())
-                self.add_connection(max(self.connections.keys()) + 1, n1, new_id, random.uniform(-1, 1))
-                self.add_connection(max(self.connections.keys()) + 1, n2, new_id, random.uniform(-1, 1))
-
-            # 33% chance: add a new connection between any two neurons
-            if random.random() < 0.33:
-                source_neuron_id = random.choice(list(self.neurons.keys()))
-                target_neuron_id = random.choice(list(self.neurons.keys()))
+            if not self.creates_cycle(source_neuron_id, target_neuron_id):
                 weight = random.uniform(-1, 1)
                 connection_id = max(self.connections.keys()) + 1 if self.connections else 0
                 self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
 
-            # 25% chance: remove a connection (and cleanup hidden neurons only)
-            if random.random() < 0.25 and self.connections:
-                connection_id = random.choice(list(self.connections.keys()))
-                if self.connections[connection_id][3] < 10:
-                    # Cleanup only hidden neurons (inputs/outputs are preserved)
-                    for neuron_id in list(self.neurons.keys()):
-                        if neuron_id in self.input_ids or neuron_id in self.output_ids:
-                            continue
-                        if neuron_id not in [self.connections[connection_id][0], self.connections[connection_id][1]]:
-                            del self.neurons[neuron_id]
-                    del self.connections[connection_id]
+        # 50% chance: add a new hidden neuron between two random neurons.
+        if random.random() < 0.5:
+            new_id = max(self.neurons.keys()) + 1
+            n1 = random.choice(list(self.neurons.keys()))
+            n2 = random.choice(list(self.neurons.keys()))
+            while n1 == n2:
+                n2 = random.choice(list(self.neurons.keys()))
+            self.add_neuron(new_id, random.random())
+            if not self.creates_cycle(n1, new_id):
+                connection_id = max(self.connections.keys()) + 1 if self.connections else 0
+                self.add_connection(connection_id, n1, new_id, random.uniform(-1, 1))
+            if not self.creates_cycle(n2, new_id):
+                connection_id = max(self.connections.keys()) + 1 if self.connections else 0
+                self.add_connection(connection_id, n2, new_id, random.uniform(-1, 1))
 
-            # 10% chance: remove a hidden neuron that is not used often
-            if random.random() < 0.1 and self.neurons:
-                neuron_id = random.choice(list(self.neurons.keys()))
-                # Only consider deletion if it's a hidden neuron
-                if neuron_id in self.input_ids or neuron_id in self.output_ids:
-                    continue
+        # 33% chance: add a new connection between any two neurons.
+        if random.random() < 0.33:
+            source_neuron_id = random.choice(list(self.neurons.keys()))
+            target_neuron_id = random.choice(list(self.neurons.keys()))
+            if source_neuron_id != target_neuron_id and not self.creates_cycle(source_neuron_id, target_neuron_id):
+                weight = random.uniform(-1, 1)
+                connection_id = max(self.connections.keys()) + 1 if self.connections else 0
+                self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
+
+        # 25% chance: remove a connection (and clean up hidden neurons).
+        if random.random() < 0.25 and self.connections:
+            connection_id = random.choice(list(self.connections.keys()))
+            if self.connections[connection_id][3] < 10:
+                for neuron_id in list(self.neurons.keys()):
+                    if neuron_id in self.input_ids or neuron_id in self.output_ids:
+                        continue
+                    if neuron_id not in [self.connections[connection_id][0], self.connections[connection_id][1]]:
+                        del self.neurons[neuron_id]
+                del self.connections[connection_id]
+
+        # 10% chance: remove a hidden neuron that is not used often.
+        if random.random() < 0.1 and self.neurons:
+            neuron_id = random.choice(list(self.neurons.keys()))
+            if neuron_id not in self.input_ids and neuron_id not in self.output_ids:
                 if self.neurons[neuron_id][1] < 10:
                     del self.neurons[neuron_id]
-                    # Cleanup: remove any connection that refers to a missing neuron
                     for connection_id in list(self.connections.keys()):
                         src, tgt, _, _ = self.connections[connection_id]
                         if src not in self.neurons or tgt not in self.neurons:
                             del self.connections[connection_id]
 
-            # Mutate weights with given mutation_rate
-            if random.random() < mutation_rate and self.connections:
-                connection_id = random.choice(list(self.connections.keys()))
-                self.connections[connection_id][2] += random.uniform(-0.1, 0.1)
+        # Mutate weights.
+        if random.random() < mutation_rate and self.connections:
+            connection_id = random.choice(list(self.connections.keys()))
+            self.connections[connection_id][2] += random.uniform(-0.1, 0.1)
 
-            # Mutate biases with given mutation_rate
-            if random.random() < mutation_rate and self.neurons:
-                neuron_id = random.choice(list(self.neurons.keys()))
-                self.neurons[neuron_id][0] += random.uniform(-0.1, 0.1)
-    
-    # Copy the Neural Network
+        # Mutate biases.
+        if random.random() < mutation_rate and self.neurons:
+            neuron_id = random.choice(list(self.neurons.keys()))
+            self.neurons[neuron_id][0] += random.uniform(-0.1, 0.1)
+
     def copy(self):
-        copy = SelfLearningNeuralNetwork(self.input_size, self.output_size)
-        copy.neurons = self.neurons.copy()
-        copy.connections = self.connections.copy()
-        copy.input_ids = self.input_ids.copy()
-        copy.output_ids = self.output_ids.copy()
-        return copy
-
+        new_copy = SelfLearningNeuralNetwork(self.input_size, self.output_size)
+        new_copy.neurons = self.neurons.copy()
+        new_copy.connections = self.connections.copy()
+        new_copy.input_ids = self.input_ids.copy()
+        new_copy.output_ids = self.output_ids.copy()
+        return new_copy
 
     def save(self, filename: str):
         with open(filename, 'w') as file:
@@ -226,28 +338,21 @@ class SelfLearningNeuralNetwork(object):
                 'neurons': self.neurons,
                 'connections': self.connections,
                 'input_ids': self.input_ids,
-                'output_ids': self.output_ids,
-                'fitness': self.fitness,
-                'wins': self.wins,
-                'losses': self.losses,
-                'draws': self.draws,
-                'legal_count': self.legal_count
+                'output_ids': self.output_ids
             }
             json.dump(data, file)
-    
+
     def load(self, filename: str):
         with open(filename, 'r') as file:
             data = json.load(file)
             self.neurons = {int(k): v for k, v in data['neurons'].items()}
-            self.connections = {int(k): [data['connections'][k][0], data['connections'][k][1], data['connections'][k][2], data['connections'][k][3]] for k in data['connections']}
+            self.connections = {
+                int(k): [data['connections'][k][0], data['connections'][k][1],
+                         data['connections'][k][2], data['connections'][k][3]]
+                for k in data['connections']
+            }
             self.input_ids = data['input_ids']
             self.output_ids = data['output_ids']
-            self.fitness = data['fitness']
-            self.wins = data['wins']
-            self.losses = data['losses']
-            self.draws = data['draws']
-            self.legal_count = data['legal_count']
-
 
 
 def get_top_move(moves: list, game: TicTacToe):
@@ -262,9 +367,9 @@ def get_top_move(moves: list, game: TicTacToe):
 def train():
     game = TicTacToe()
     # Parameters
-    POPULATION_SIZE = 20
-    ELITE_SIZE = 4
-    GENERATIONS = 100
+    POPULATION_SIZE = 100
+    ELITE_SIZE = 3
+    GENERATIONS = 10000
     MUTATION_RATE = 0.1
 
     population = []
@@ -284,8 +389,6 @@ def train():
                 user_turn = True
                 # Get the other Neural Network
                 opponent = population[opp]
-                if opponent == NN:
-                    continue
                 while not game.is_over():
                     if user_turn:
                         state = game.board
@@ -293,10 +396,8 @@ def train():
                         top_move = moves.index(max(moves))
                         best_move = get_top_move(moves, game)
                         if top_move == best_move:
-                            NN.fitness += 100 # Reward for making the best move
                             NN.legal_count += 1
-                        else:
-                            NN.fitness -= 100 # Greatly penalize for making an illegal move
+                        NN.total_moves += 1
                         game.play(best_move)
                     else:
                         state = game.board
@@ -304,10 +405,8 @@ def train():
                         top_move = moves.index(max(moves))
                         best_move = get_top_move(moves, game)
                         if top_move == best_move:
-                            opponent.fitness += 100 # Reward for making the best move
                             opponent.legal_count += 1
-                        else:
-                            opponent.fitness -= 100 # Greatly penalize for an illegal move
+                        opponent.total_moves += 1
                         game.play(best_move)
                     user_turn = not user_turn
                 # Reward the winner, penalize the loser, and partially reward a draw
@@ -315,18 +414,22 @@ def train():
                 if game.winner == 0:
                     NN.draws += 1
                     opponent.draws += 1
-                    NN.fitness += 5
-                    opponent.fitness += 5
                 elif game.winner == 1:
                     NN.wins += 1
                     opponent.losses += 1
-                    NN.fitness += 10
-                    opponent.fitness -= 10
                 else:
                     NN.losses += 1
                     opponent.wins += 1
-                    NN.fitness -= 10
-                    opponent.fitness += 10
+
+        # Calculate the fitness of each Neural Network
+        for NN in population:
+            # NN.fitness = NN.wins + NN.draws / 2 - NN.losses ** 2
+            accuracy = NN.legal_count / NN.total_moves * 100
+            NN.fitness = accuracy * POPULATION_SIZE
+            # if accuracy >= 95: # The ai has learnt how to atleast play, so now we benefit wins, losses, and draws
+            #     NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
+            NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
+
 
         population.sort(key=lambda x: x.fitness, reverse=True)
         
@@ -338,7 +441,7 @@ def train():
         # Print the best Neural Network's fitness
         print(f'Generation {generation + 1}, Fitness: {elite_population[0].fitness / POPULATION_SIZE}')
         # Print the best Neural Network's wins, losses, and draws
-        print(f'Wins: {elite_population[0].wins}, Losses: {elite_population[0].losses}, Draws: {elite_population[0].draws}, Legal Moves: {elite_population[0].legal_count}')
+        print(f'Wins: {elite_population[0].wins}, Losses: {elite_population[0].losses}, Draws: {elite_population[0].draws}, Accuracy: {round(100 * elite_population[0].legal_count / elite_population[0].total_moves, 2)}%')
 
         # Crossover the elite population to create the next generation and keep the elite population
         new_population = elite_population.copy()
@@ -358,6 +461,7 @@ def train():
             NN.losses = 0
             NN.draws = 0
             NN.legal_count = 0
+            NN.total_moves = 0
         
         population = new_population.copy()
 
@@ -402,5 +506,5 @@ def play(filename):
             print('You lose!')
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
-    # train()
-    play('ssnn.json')
+    train()
+    # play('ssnn.json')
