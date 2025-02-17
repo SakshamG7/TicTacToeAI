@@ -21,10 +21,12 @@ from tictactoe import TicTacToe
 
 # Activation Function
 def SakshamsLinearCutOff(x: float) -> float:
-    if x > 1:
-        return x * 0.01 + 0.99
-    elif x < -1:
-        return x * 0.01 - 0.99
+    diff = 0.01
+    cut_off = 1
+    if x > cut_off:
+        return x * diff + (cut_off - diff)
+    elif x < -cut_off:
+        return x * diff - (cut_off - diff)
     return x
 
 def softmax(x):
