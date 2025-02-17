@@ -1,4 +1,4 @@
-/models/best*
+/models/*
 /__pycache__/*
 /old/models/*
 /.conda/*

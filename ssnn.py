@@ -230,25 +230,100 @@ class SelfLearningNeuralNetwork(object):
             self.input_ids = data['input_ids']
             self.output_ids = data['output_ids']
 
-def main():
-    SSNN = SelfLearningNeuralNetwork()
-    game = TicTacToe()
-    TURNS = 1000
 
-    for i in range(TURNS):
-        print(f'Turn: {i + 1}')
-        game.reset()
-        while not game.is_over():
-            state = game.board
-            move = SSNN.forward(state, 9, 0.9)
-            best_move = None
-            best_value = -1
-            for i in range(len(move)):
-                if game.is_valid_move(i) and move[i] > best_value:
-                    best_move = i
-                    best_value = move[i]
-            game.play(best_move)
-    SSNN.save('ssnn.json')
+def get_top_move(moves: list, game: TicTacToe):
+    best_move = None
+    best_value = -1
+    for i in range(len(moves)):
+        if game.is_valid_move(i) and moves[i] > best_value:
+            best_move = i
+            best_value = moves[i]
+    return best_move
+
+def train():
+    game = TicTacToe()
+    # Parameters
+    POPULATION_SIZE = 100
+    ELITE_SIZE = 10
+    GENERATIONS = 100
+    MUTATION_RATE = 0.1
+
+    population = []
+
+    # Setup the initial population, mutate it too to add some diversity
+    for _ in range(POPULATION_SIZE):
+        SSNN = SelfLearningNeuralNetwork(9, 9)
+        SSNN.mutate(0.25)
+        population.append(SSNN)
+
+    # Training loop, find the best Neural Network
+    for generation in range(GENERATIONS):
+        for NN in population:
+            # Complete with the rest of the population
+            for opp in range(POPULATION_SIZE):
+                game.reset()
+                user_turn = True
+                # Get the other Neural Network
+                opponent = population[opp]
+                if opponent == NN:
+                    continue
+                while not game.is_over():
+                    if user_turn:
+                        state = game.board
+                        moves = NN.forward(state)
+                        top_move = moves.index(max(moves))
+                        best_move = get_top_move(moves, game)
+                        if top_move == best_move:
+                            NN.fitness += 100 # Reward for making the best move
+                        else:
+                            NN.fitness -= 100 # Greatly penalize for making an illegal move
+                        game.play(best_move)
+                    else:
+                        state = game.board
+                        moves = opponent.forward(state)
+                        top_move = moves.index(max(moves))
+                        best_move = get_top_move(moves, game)
+                        if top_move == best_move:
+                            opponent.fitness += 100 # Reward for making the best move
+                        else:
+                            opponent.fitness -= 100 # Greatly penalize for an illegal move
+                        game.play(best_move)
+                    user_turn = not user_turn
+                # Reward the winner
+                # game.winner, if X wins, returns 1, if O wins, returns -1, if draw, returns 0
+                NN.fitness += game.winner * 10
+                opponent.fitness -= game.winner * 10
+                if game.winner == 0:
+                    NN.fitness += 5
+                    opponent.fitness += 5
+
+        population.sort(key=lambda x: x.fitness, reverse=True)
+        
+        elite_population = population[:ELITE_SIZE]
+
+        # Save the best Neural Network with its normalized fitness and generation
+        elite_population[0].save(f'models/ssnn_gen_{generation + 1}_fit_{elite_population[0].fitness / POPULATION_SIZE}.json')
+
+        # Print the best Neural Network's fitness
+        print(f'Generation {generation + 1}, Fitness: {elite_population[0].fitness / POPULATION_SIZE}')
+
+        # Crossover the elite population to create the next generation and keep the elite population
+        new_population = elite_population.copy()
+        for _ in range(POPULATION_SIZE - ELITE_SIZE):
+            parent1 = random.choice(elite_population)
+            elite_population.remove(parent1) # Prevents the same parent from being selected twice
+            parent2 = random.choice(elite_population)
+            elite_population.append(parent1) # Add back the removed parent
+            child = parent1.crossover(parent2)
+            child.mutate(MUTATION_RATE)
+            child.fitness = 0
+            new_population.append(child)
+        
+        population = new_population.copy()
+
+    # Save the best Neural Network
+    population[0].save('ssnn.json')
+
 
 def play(filename):
     SSNN = SelfLearningNeuralNetwork()
@@ -265,12 +340,7 @@ def play(filename):
         else:
             state = game.board
             moves = SSNN.forward(state, 9, 0.9)
-            best_move = None
-            best_value = -1
-            for i in range(len(moves)):
-                if game.is_valid_move(i) and moves[i] > best_value:
-                    best_move = i
-                    best_value = moves[i]
+            best_move = get_top_move(moves)
             game.play(best_move)
         user_turn = not user_turn
 
@@ -284,5 +354,5 @@ def play(filename):
 
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
-    # main()
-    play('ssnn.json')
+    train()
+    # play('ssnn.json')
