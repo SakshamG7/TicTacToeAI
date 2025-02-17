@@ -391,10 +391,15 @@ def play(filename):
     if game.winner == 0:
         print('It is a draw!')
     elif game.winner == 1:
-        print('You win!' if user_turn else 'Neural Network wins!')
+        if user_first == 'y':
+            print('You win!')
+        else:
+            print('You lose!')
     else:
-        print('Neural Network wins!' if user_turn else 'You win!')
-
+        if user_first == 'n':
+            print('You win!')
+        else:
+            print('You lose!')
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
     # train()
