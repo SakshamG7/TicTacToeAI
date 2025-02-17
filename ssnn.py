@@ -70,7 +70,7 @@ class SelfLearningNeuralNetwork(object):
         if len(inputs) != self.input_size:
             raise ValueError('Invalid input size')
         # Take in the inputs and set the values of the input neurons
-        for i in range(self.input_ids):
+        for i in self.input_ids:
             self.neurons[i][2] = inputs[i]
 
         # Propagate values via connections (iterate over a copy of the keys), I just relized this is a completly wrong but new implementation for a forward pass, lets see how it goes!
