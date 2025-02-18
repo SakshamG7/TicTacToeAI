@@ -324,6 +324,8 @@ class SelfLearningNeuralNetwork(object):
         new_network.draws = self.draws
         new_network.legal_count = self.legal_count
         new_network.total_moves = self.total_moves
+        new_network.invalidate_cache()
+        new_network.topological_sort()
         return new_network
 
     def save(self, filename: str):
@@ -484,9 +486,9 @@ def train():
             # if accuracy >= 95: # The ai has learnt how to atleast play, so now we benefit wins, losses, and draws, THIS VERSION may need new species to be perserved to grow and get better, however the simpler version below works great!
             #     NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
             if accuracy <= 90:
-                NN.fitness += NN.wins - NN.losses ** 3 + NN.draws / 2
+                NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
             else:
-                NN.fitness += (NN.wins * 2 - NN.losses ** 3 + NN.draws * 1.5)
+                NN.fitness += (NN.wins * 2 - NN.losses ** 2 + NN.draws * 1.5)
             if NN.legal_count == NN.total_moves: # Consistency is better than a one time win
                 NN.fitness *= 10
 
@@ -507,9 +509,9 @@ def train():
         new_population = elite_population.copy()
         for _ in range(POPULATION_SIZE - ELITE_SIZE):
             parent1 = random.choice(elite_population)
-            elite_population.remove(parent1) # Prevents the same parent from being selected twice
+            parent1 = parent1.copy() # Prevents the parent from being modified
             parent2 = random.choice(elite_population)
-            elite_population.append(parent1) # Add back the removed parent
+            parent2 = parent2.copy() # Prevents the parent from being modified
             child = parent1.crossover(parent2)
             child.mutate(MUTATION_RATE)
             new_population.append(child)
@@ -568,5 +570,5 @@ def play(filename):
             print('You lose!')
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
-    # train()
-    play('models/ssnn.json')
+    train()
+    # play('models/ssnn.json')
