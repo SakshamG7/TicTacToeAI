@@ -183,62 +183,69 @@ class SelfLearningNeuralNetwork(object):
 
     def crossover(self, parent):
         """
-        Performs crossover with another network.
-        Inherited connections are added only if they do not create a cycle.
+        Performs NEAT-style crossover with another network by aligning genes (neurons and connections)
+        based on their (source, target) pairs. Matching genes are randomly chosen, while disjoint and excess genes 
+        are inherited from the fitter parent. In case of equal fitness, genes are inherited from both parents.
         """
+        # Determine the fitter parent; if fitnesses are equal, set fitter to None.
+        if self.fitness > parent.fitness:
+            fitter = self
+        elif self.fitness < parent.fitness:
+            fitter = parent
+        else:
+            fitter = None  # Equal fitness
+
         child = SelfLearningNeuralNetwork(self.input_size, self.output_size)
-        child.invalidate_cache()
-        # Cross over shared neurons.
-        for neuron_id in self.neurons:
-            if neuron_id in parent.neurons:
+
+        # Neuron crossover: take the union of neuron IDs from both parents.
+        for neuron_id in set(self.neurons.keys()).union(parent.neurons.keys()):
+            if neuron_id in self.neurons and neuron_id in parent.neurons:
+                # Matching neuron: choose randomly from either parent.
                 child.neurons[neuron_id] = (
-                    self.neurons[neuron_id].copy() if random.random() < 0.5 
+                    self.neurons[neuron_id].copy() if random.random() < 0.5
                     else parent.neurons[neuron_id].copy()
                 )
-                child.invalidate_cache()
-
-        # Cross over shared connections with cycle prevention.
-        for connection_id in self.connections:
-            if connection_id in parent.connections:
-                candidate = self.connections[connection_id] if random.random() < 0.5 else parent.connections[connection_id]
-                source, target, weight, usage = candidate
-                if source in child.neurons and target in child.neurons and not child.creates_cycle(source, target):
-                    child.connections[connection_id] = candidate.copy()
-                    child.invalidate_cache()
-
-        # Add remaining neurons from the fitter parent.
-        if self.fitness > parent.fitness:
-            for neuron_id in self.neurons:
-                if neuron_id not in child.neurons:
+            elif neuron_id in self.neurons:
+                # Disjoint/excess gene from self.
+                if fitter is None or fitter is self:
                     child.neurons[neuron_id] = self.neurons[neuron_id].copy()
-                    child.invalidate_cache()
-        else:
-            for neuron_id in parent.neurons:
-                if neuron_id not in child.neurons:
+            elif neuron_id in parent.neurons:
+                # Disjoint/excess gene from parent.
+                if fitter is None or fitter is parent:
                     child.neurons[neuron_id] = parent.neurons[neuron_id].copy()
-                    child.invalidate_cache()
 
-        # Add remaining connections from the fitter parent with cycle prevention.
-        if self.fitness > parent.fitness:
-            for connection_id in self.connections:
-                if connection_id not in child.connections:
-                    src, tgt, _, _ = self.connections[connection_id]
-                    if src in child.neurons and tgt in child.neurons and not child.creates_cycle(src, tgt):
-                        child.connections[connection_id] = self.connections[connection_id].copy()
-                        child.invalidate_cache()
-        else:
-            for connection_id in parent.connections:
-                if connection_id not in child.connections:
-                    src, tgt, _, _ = parent.connections[connection_id]
-                    if src in child.neurons and tgt in child.neurons and not child.creates_cycle(src, tgt):
-                        child.connections[connection_id] = parent.connections[connection_id].copy()
-                        child.invalidate_cache()
+        # Build connection dictionaries keyed by (source, target).
+        conn_self = {(data[0], data[1]): data for data in self.connections.values()}
+        conn_parent = {(data[0], data[1]): data for data in parent.connections.values()}
+
+        # Connection crossover: align genes by their (source, target) pairs.
+        for key in set(conn_self.keys()).union(conn_parent.keys()):
+            if key in conn_self and key in conn_parent:
+                # Matching gene: select randomly.
+                gene = random.choice([conn_self[key], conn_parent[key]])
+            elif key in conn_self:
+                if fitter is None or fitter is self:
+                    gene = conn_self[key]
+                else:
+                    continue
+            elif key in conn_parent:
+                if fitter is None or fitter is parent:
+                    gene = conn_parent[key]
+                else:
+                    continue
+
+            source, target, weight, usage = gene
+            # Add gene only if both neurons exist and adding it does not create a cycle.
+            if source in child.neurons and target in child.neurons and not child.creates_cycle(source, target):
+                new_id = max(child.connections.keys()) + 1 if child.connections else 0
+                child.connections[new_id] = gene.copy()
 
         child.input_ids = self.input_ids.copy()
         child.output_ids = self.output_ids.copy()
-        # Optionally, precompute and cache the topological order here.
+        child.invalidate_cache()
         child.topological_sort()
         return child
+
 
     def mutate(self, mutation_rate: float = 0.1, MAX_MUT: int = 500, MIN_MUT: int = 1):
         """
@@ -373,7 +380,7 @@ def train():
     # Setup the initial population, mutate it too to add some diversity
     for _ in range(POPULATION_SIZE):
         SSNN = SelfLearningNeuralNetwork(9, 9)
-        SSNN.mutate(0.5, 500, 50)
+        SSNN.mutate(0.25)
         population.append(SSNN)
 
     # Training loop, find the best Neural Network
