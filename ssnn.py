@@ -495,4 +495,4 @@ def play(filename):
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
     train()
-    # play('models/ssnn_gen_136_fit_99.00352337514254.json')
+    # play('models/ssnn_gen_829_fit_10301.532110091744.json')
