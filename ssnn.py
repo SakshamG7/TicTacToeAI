@@ -364,14 +364,11 @@ def train():
     # Parameters
     POPULATION_SIZE = 100
     ELITE_SIZE = 3
-    BEST_SIZE = 10
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
     RANDO_TURNS = 200 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
-
-    best_population = []
 
     # Setup the initial population, mutate it too to add some diversity
     for _ in range(POPULATION_SIZE):
@@ -487,11 +484,6 @@ def train():
 
 
         population.sort(key=lambda x: x.fitness, reverse=True)
-
-        best_population.append(population[0].copy())
-
-        if len(best_population) > BEST_SIZE:
-            best_population = best_population[1:]
         
         elite_population = population[:ELITE_SIZE]
 
@@ -504,8 +496,8 @@ def train():
         print(f'Wins: {elite_population[0].wins}, Losses: {elite_population[0].losses}, Draws: {elite_population[0].draws}, Accuracy: {round(100 * elite_population[0].legal_count / elite_population[0].total_moves, 2)}%')
 
         # Crossover the elite population to create the next generation and keep the elite population
-        new_population = elite_population.copy()[1:] + best_population.copy()
-        for _ in range(POPULATION_SIZE - ELITE_SIZE - len(best_population)):
+        new_population = elite_population.copy()
+        for _ in range(POPULATION_SIZE - ELITE_SIZE):
             parent1 = random.choice(elite_population)
             elite_population.remove(parent1) # Prevents the same parent from being selected twice
             parent2 = random.choice(elite_population)
