@@ -503,7 +503,7 @@ def train():
 
         # Crossover the elite population to create the next generation and keep the elite population
         new_population = elite_population.copy()[1:] + best_population.copy()
-        for _ in range(POPULATION_SIZE - ELITE_SIZE):
+        for _ in range(POPULATION_SIZE - ELITE_SIZE - len(best_population)):
             parent1 = random.choice(elite_population)
             elite_population.remove(parent1) # Prevents the same parent from being selected twice
             parent2 = random.choice(elite_population)
