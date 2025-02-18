@@ -21,8 +21,11 @@ from tictactoe import TicTacToe
 
 # Activation Function
 def SakshamsLinearCutOff(x: float) -> float:
-    diff = 0.01 # The differences 0.9, 0.1 and 0.01 perfrom really well, I cant decide which one is better
-    # 0.01 seems to work the best with further testing, but 0.1 is also really good
+    diff = 0.5
+    # 0.4 seems to work the best for tuning Confidence and 0.5 works best with wins/loss/draw ratio, found with even further testing
+    # 0.45 looks promising
+    # 0.5 is getting better, just takes some time
+    # 0.8 is also promising
     cut_off = 1
     if x > cut_off:
         return x * diff + (cut_off - diff)
@@ -419,7 +422,7 @@ def train():
             
             # Play against a random player to explore more
             for turn in range(RANDO_TURNS // 2):
-                random.seed(generation + turn) # This is to make the randomness more consistent and less dependant on luck
+                # random.seed(generation + turn) # This is to make the randomness more consistent and less dependant on luck
                 game.reset()
                 user_turn = True
                 while not game.is_over():
@@ -446,10 +449,10 @@ def train():
                 elif game.winner == 1:
                     NN.wins += 1
                 else:
-                    NN.losses += 2 # Really shouldnt lose to a player that makes random moves
+                    NN.losses += 10 # Really shouldnt lose to a player that makes random moves
             # Now the random player plays first
             for _ in range(RANDO_TURNS // 2):
-                random.seed(generation + turn) # Lowers the chance of the AI winning by luck
+                # random.seed(generation + turn) # Lowers the chance of the AI winning by luck
                 game.reset()
                 user_turn = False
                 while not game.is_over():
@@ -476,13 +479,13 @@ def train():
                 elif game.winner == 1:
                     NN.wins += 1
                 else:
-                    NN.losses += 2 # Really shouldnt lose to a player that makes random moves
+                    NN.losses += 10 # Really shouldnt lose to a player that makes random moves
 
         # Calculate the fitness of each Neural Network
         for NN in population:
-            accuracy = NN.legal_count / NN.total_moves
-            NN.fitness = (NN.wins - NN.losses + NN.draws / 2) * accuracy * 100 / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
-
+            confidence = 100 * NN.legal_count / NN.total_moves
+            NN.fitness = (NN.wins + NN.draws / 2) * confidence ** 2 / 100 / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
+            NN.fitness -= NN.losses ** 2 / (POPULATION_SIZE) # Penalize the Neural Network for losing
 
         population.sort(key=lambda x: x.fitness, reverse=True)
         
@@ -494,7 +497,7 @@ def train():
         # Print the best Neural Network's fitness
         print(f'Generation {generation + 1}, Fitness: {elite_population[0].fitness}')
         # Print the best Neural Network's wins, losses, and draws
-        print(f'Wins: {elite_population[0].wins}, Losses: {elite_population[0].losses}, Draws: {elite_population[0].draws}, Accuracy: {round(100 * elite_population[0].legal_count / elite_population[0].total_moves, 2)}%')
+        print(f'Wins: {elite_population[0].wins}, Losses: {elite_population[0].losses}, Draws: {elite_population[0].draws}, Confidence: {round(100 * elite_population[0].legal_count / elite_population[0].total_moves, 2)}%')
 
         # Crossover the elite population to create the next generation and keep the elite population
         new_population = elite_population.copy()
