@@ -311,6 +311,7 @@ class SelfLearningNeuralNetwork(object):
                 neuron_id = random.choice(list(self.neurons.keys()))
                 self.neurons[neuron_id][0] += random.uniform(-1, 1)
 
+
     def copy(self):
         new_network = SelfLearningNeuralNetwork(self.input_size, self.output_size)
         new_network.neurons = {k: v.copy() for k, v in self.neurons.items()}
