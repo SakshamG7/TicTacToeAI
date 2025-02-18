@@ -240,14 +240,14 @@ class SelfLearningNeuralNetwork(object):
         child.topological_sort()
         return child
 
-    def mutate(self, mutation_rate: float = 0.1, MAX_MUT: int = 500):
+    def mutate(self, mutation_rate: float = 0.1, MAX_MUT: int = 500, MIN_MUT: int = 1):
         """
         Mutates the network by adding new connections/neurons or modifying existing ones.
         New connections are added only if they do not create a cycle.
         """
         self.invalidate_cache()
         # Add new connections to random input-output pairs.
-        for i in range(min(MAX_MUT, random.randint(1, 1 + len(self.neurons) // 2))):
+        for i in range(max(MIN_MUT, min(MAX_MUT, random.randint(0, 1 + len(self.neurons) // 2)))):
             # 50% chance: add a new connection between an input and an output neuron.
             if random.random() < 0.5:
                 source_neuron_id = random.choice(self.input_ids)
@@ -363,17 +363,17 @@ def train():
     game = TicTacToe()
     # Parameters
     POPULATION_SIZE = 100
-    ELITE_SIZE = 3
+    ELITE_SIZE = 10
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
-    RANDO_TURNS = POPULATION_SIZE * 2 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
+    RANDO_TURNS = POPULATION_SIZE * 4 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
 
     # Setup the initial population, mutate it too to add some diversity
     for _ in range(POPULATION_SIZE):
         SSNN = SelfLearningNeuralNetwork(9, 9)
-        SSNN.mutate(0.25)
+        SSNN.mutate(0.5, 500, 50)
         population.append(SSNN)
 
     # Training loop, find the best Neural Network
