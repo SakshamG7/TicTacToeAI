@@ -362,6 +362,7 @@ def train():
     # Parameters
     POPULATION_SIZE = 100
     ELITE_SIZE = 3
+    BEST_SIZE = 20
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
     RANDO_TURNS = 200 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
@@ -486,6 +487,9 @@ def train():
         population.sort(key=lambda x: x.fitness, reverse=True)
 
         best_population.append(population[0].copy())
+
+        if len(best_population) > BEST_SIZE:
+            best_population = best_population[1:]
         
         elite_population = population[:ELITE_SIZE]
 
