@@ -362,7 +362,7 @@ def train():
     # Parameters
     POPULATION_SIZE = 100
     ELITE_SIZE = 3
-    BEST_SIZE = 20
+    BEST_SIZE = 10
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
     RANDO_TURNS = 200 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
