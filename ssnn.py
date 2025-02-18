@@ -187,6 +187,7 @@ class SelfLearningNeuralNetwork(object):
         Inherited connections are added only if they do not create a cycle.
         """
         child = SelfLearningNeuralNetwork(self.input_size, self.output_size)
+        child.invalidate_cache()
         # Cross over shared neurons.
         for neuron_id in self.neurons:
             if neuron_id in parent.neurons:
@@ -244,6 +245,7 @@ class SelfLearningNeuralNetwork(object):
         Mutates the network by adding new connections/neurons or modifying existing ones.
         New connections are added only if they do not create a cycle.
         """
+        self.invalidate_cache()
         # Add new connections to random input-output pairs.
         for i in range(random.randint(1, 1 + len(self.neurons) // 2)):
             source_neuron_id = random.choice(self.input_ids)
@@ -310,12 +312,18 @@ class SelfLearningNeuralNetwork(object):
             self.neurons[neuron_id][0] += random.uniform(-0.1, 0.1)
 
     def copy(self):
-        new_copy = SelfLearningNeuralNetwork(self.input_size, self.output_size)
-        new_copy.neurons = self.neurons.copy()
-        new_copy.connections = self.connections.copy()
-        new_copy.input_ids = self.input_ids.copy()
-        new_copy.output_ids = self.output_ids.copy()
-        return new_copy
+        new_network = SelfLearningNeuralNetwork(self.input_size, self.output_size)
+        new_network.neurons = {k: v.copy() for k, v in self.neurons.items()}
+        new_network.connections = {k: v.copy() for k, v in self.connections.items()}
+        new_network.input_ids = self.input_ids.copy()
+        new_network.output_ids = self.output_ids.copy()
+        new_network.fitness = self.fitness
+        new_network.wins = self.wins
+        new_network.losses = self.losses
+        new_network.draws = self.draws
+        new_network.legal_count = self.legal_count
+        new_network.total_moves = self.total_moves
+        return new_network
 
     def save(self, filename: str):
         with open(filename, 'w') as file:
@@ -356,8 +364,11 @@ def train():
     ELITE_SIZE = 3
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
+    RANDO_TURNS = 200 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
+
+    best_population = []
 
     # Setup the initial population, mutate it too to add some diversity
     for _ in range(POPULATION_SIZE):
@@ -369,11 +380,9 @@ def train():
     for generation in range(GENERATIONS):
         for NN in population:
             # Complete with the rest of the population
-            for opp in range(POPULATION_SIZE):
+            for opponent in population:
                 game.reset()
                 user_turn = True
-                # Get the other Neural Network
-                opponent = population[opp]
                 while not game.is_over():
                     if user_turn:
                         state = game.board
@@ -405,21 +414,78 @@ def train():
                 else:
                     NN.losses += 1
                     opponent.wins += 1
+            
+            # Play against a random player to explore more
+            for _ in range(RANDO_TURNS // 2):
+                game.reset()
+                user_turn = True
+                while not game.is_over():
+                    state = game.board
+                    if user_turn:
+                        moves = NN.forward(state)
+                        top_move = moves.index(max(moves))
+                        best_move = get_top_move(moves, game)
+                        if top_move == best_move:
+                            NN.legal_count += 1
+                        NN.total_moves += 1
+                        game.play(best_move)
+                    else:
+                        moves = [0 for _ in range(9)]
+                        while not game.is_valid_move(best_move):
+                            best_move = random.randint(0, 8)
+                        game.play(best_move)
+                    user_turn = not user_turn
+                if game.winner == 0:
+                    NN.draws += 1
+                elif game.winner == 1:
+                    NN.wins += 1
+                else:
+                    NN.losses += 1
+            # Now the random player plays first
+            for _ in range(RANDO_TURNS // 2):
+                game.reset()
+                user_turn = False
+                while not game.is_over():
+                    state = game.board
+                    if user_turn:
+                        moves = NN.forward(state)
+                        top_move = moves.index(max(moves))
+                        best_move = get_top_move(moves, game)
+                        if top_move == best_move:
+                            NN.legal_count += 1
+                        NN.total_moves += 1
+                        game.play(best_move)
+                    else:
+                        moves = [0 for _ in range(9)]
+                        while not game.is_valid_move(best_move):
+                            best_move = random.randint(0, 8)
+                        game.play(best_move)
+                    user_turn = not user_turn
+                if game.winner == 0:
+                    NN.draws += 1
+                elif game.winner == 1:
+                    NN.wins += 1
+                else:
+                    NN.losses += 1
 
         # Calculate the fitness of each Neural Network
         for NN in population:
             # NN.fitness = NN.wins + NN.draws / 2 - NN.losses ** 2
             accuracy = NN.legal_count / NN.total_moves * 100
-            NN.fitness = accuracy * POPULATION_SIZE
+            NN.fitness = accuracy * (POPULATION_SIZE + RANDO_TURNS)
             # if accuracy >= 95: # The ai has learnt how to atleast play, so now we benefit wins, losses, and draws, THIS VERSION may need new species to be perserved to grow and get better, however the simpler version below works great!
             #     NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
             if accuracy <= 90:
                 NN.fitness += NN.wins - NN.losses ** 3 + NN.draws / 2
             else:
                 NN.fitness += (NN.wins * 2 - NN.losses ** 3 + NN.draws * 1.5)
+            if NN.legal_count == NN.total_moves: # Consistency is better than a one time win
+                NN.fitness *= 10
 
 
         population.sort(key=lambda x: x.fitness, reverse=True)
+
+        best_population.append(population[0].copy())
         
         elite_population = population[:ELITE_SIZE]
 
@@ -432,7 +498,7 @@ def train():
         print(f'Wins: {elite_population[0].wins}, Losses: {elite_population[0].losses}, Draws: {elite_population[0].draws}, Accuracy: {round(100 * elite_population[0].legal_count / elite_population[0].total_moves, 2)}%')
 
         # Crossover the elite population to create the next generation and keep the elite population
-        new_population = elite_population.copy()
+        new_population = elite_population.copy()[1:] + best_population.copy()
         for _ in range(POPULATION_SIZE - ELITE_SIZE):
             parent1 = random.choice(elite_population)
             elite_population.remove(parent1) # Prevents the same parent from being selected twice
@@ -442,6 +508,7 @@ def train():
             child.mutate(MUTATION_RATE)
             new_population.append(child)
         
+        population = []
         # Reset the stats of the new population
         for NN in new_population:
             NN.fitness = 0
@@ -450,8 +517,9 @@ def train():
             NN.draws = 0
             NN.legal_count = 0
             NN.total_moves = 0
-        
-        population = new_population.copy()
+            NN.invalidate_cache()
+            population.append(NN)
+        POPULATION_SIZE = len(new_population) # Update the population size
 
     # Save the best Neural Network
     population[0].save('ssnn.json')
