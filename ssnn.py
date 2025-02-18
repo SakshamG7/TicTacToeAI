@@ -366,7 +366,7 @@ def train():
     ELITE_SIZE = 3
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
-    RANDO_TURNS = 500 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
+    RANDO_TURNS = POPULATION_SIZE * 2 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
 
@@ -378,6 +378,7 @@ def train():
 
     # Training loop, find the best Neural Network
     for generation in range(GENERATIONS):
+        # random.seed(generation) might be useful to keep the randomness more consistent and make it less dependant on luck
         for NN in population:
             # Complete with the rest of the population
             for opponent in population:
@@ -416,7 +417,8 @@ def train():
                     opponent.wins += 1
             
             # Play against a random player to explore more
-            for _ in range(RANDO_TURNS // 2):
+            for turn in range(RANDO_TURNS // 2):
+                random.seed(generation + turn) # This is to make the randomness more consistent and less dependant on luck
                 game.reset()
                 user_turn = True
                 while not game.is_over():
@@ -431,8 +433,11 @@ def train():
                         game.play(best_move)
                     else:
                         moves = [0 for _ in range(9)]
-                        while not game.is_valid_move(best_move):
-                            best_move = random.randint(0, 8)
+                        # Delete non valid moves
+                        for move in moves:
+                            if not game.is_valid_move(move):
+                                moves.remove(move)
+                        best_move = random.choice(moves)
                         game.play(best_move)
                     user_turn = not user_turn
                 if game.winner == 0:
@@ -443,6 +448,7 @@ def train():
                     NN.losses += 1
             # Now the random player plays first
             for _ in range(RANDO_TURNS // 2):
+                random.seed(generation + turn) # Lowers the chance of the AI winning by luck
                 game.reset()
                 user_turn = False
                 while not game.is_over():
@@ -457,8 +463,11 @@ def train():
                         game.play(best_move)
                     else:
                         moves = [0 for _ in range(9)]
-                        while not game.is_valid_move(best_move):
-                            best_move = random.randint(0, 8)
+                        # Delete non valid moves
+                        for move in moves:
+                            if not game.is_valid_move(move):
+                                moves.remove(move)
+                        best_move = random.choice(moves)
                         game.play(best_move)
                     user_turn = not user_turn
                 if game.winner == 0:
