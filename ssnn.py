@@ -25,7 +25,7 @@ def SakshamsLinearCutOff(x: float) -> float:
     # 0.4 seems to work the best for tuning Confidence and 0.5 works best with wins/loss/draw ratio, found with even further testing
     # 0.45 looks promising
     # 0.5 is getting better, just takes some time
-    # 0.8 is also promising
+    # 0.8 is also promising and might be better than 0.5
     cut_off = 1
     if x > cut_off:
         return x * diff + (cut_off - diff)
