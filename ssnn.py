@@ -21,7 +21,8 @@ from tictactoe import TicTacToe
 
 # Activation Function
 def SakshamsLinearCutOff(x: float) -> float:
-    diff = 0.1 # The differences 0.1 and 0.01 perfrom really well, I cant decide which one is better
+    diff = 0.01 # The differences 0.9, 0.1 and 0.01 perfrom really well, I cant decide which one is better
+    # 0.01 seems to work the best with further testing, but 0.1 is also really good
     cut_off = 1
     if x > cut_off:
         return x * diff + (cut_off - diff)
@@ -49,6 +50,8 @@ class SelfLearningNeuralNetwork(object):
         self.draws = 0
         self.legal_count = 0
         self.total_moves = 0
+        # Cached topological order for efficient forward passes.
+        self.cached_topological_order = None
 
         # Create input neurons.
         for i in range(input_size):
@@ -60,11 +63,17 @@ class SelfLearningNeuralNetwork(object):
             self.add_neuron(i, 0)
             self.output_ids.append(i)
 
+    def invalidate_cache(self):
+        """Invalidates the cached topological order."""
+        self.cached_topological_order = None
+
     def add_neuron(self, neuron_id: int, bias):
         self.neurons[neuron_id] = [bias, 0, 0]
+        self.invalidate_cache()
 
     def add_connection(self, connection_id, source_neuron_id, target_neuron_id, weight):
         self.connections[connection_id] = [source_neuron_id, target_neuron_id, weight, 0]
+        self.invalidate_cache()
 
     def creates_cycle(self, source: int, target: int) -> bool:
         """
@@ -87,10 +96,10 @@ class SelfLearningNeuralNetwork(object):
         return dfs(target)
 
     def topological_sort(self):
-        """
-        Returns a topologically sorted list of neuron IDs if the network is acyclic.
-        If a cycle is detected, returns None.
-        """
+        """Returns a cached topological sort if available; otherwise computes and caches it."""
+        if self.cached_topological_order is not None:
+            return self.cached_topological_order
+
         in_degree = {neuron: 0 for neuron in self.neurons}
         for conn in self.connections.values():
             target = conn[1]
@@ -110,7 +119,8 @@ class SelfLearningNeuralNetwork(object):
                     in_degree[target] -= 1
                     if in_degree[target] == 0:
                         queue.append(target)
-        return order if len(order) == len(self.neurons) else None
+        self.cached_topological_order = order if len(order) == len(self.neurons) else None
+        return self.cached_topological_order
 
     def forward(self, inputs: list):
         """
@@ -173,8 +183,8 @@ class SelfLearningNeuralNetwork(object):
 
     def crossover(self, parent):
         """
-        Performs crossover with another network to produce a child network.
-        Connections are only added if they do not create a cycle.
+        Performs crossover with another network.
+        Inherited connections are added only if they do not create a cycle.
         """
         child = SelfLearningNeuralNetwork(self.input_size, self.output_size)
         # Cross over shared neurons.
@@ -184,6 +194,7 @@ class SelfLearningNeuralNetwork(object):
                     self.neurons[neuron_id].copy() if random.random() < 0.5 
                     else parent.neurons[neuron_id].copy()
                 )
+                child.invalidate_cache()
 
         # Cross over shared connections with cycle prevention.
         for connection_id in self.connections:
@@ -192,16 +203,19 @@ class SelfLearningNeuralNetwork(object):
                 source, target, weight, usage = candidate
                 if source in child.neurons and target in child.neurons and not child.creates_cycle(source, target):
                     child.connections[connection_id] = candidate.copy()
+                    child.invalidate_cache()
 
         # Add remaining neurons from the fitter parent.
         if self.fitness > parent.fitness:
             for neuron_id in self.neurons:
                 if neuron_id not in child.neurons:
                     child.neurons[neuron_id] = self.neurons[neuron_id].copy()
+                    child.invalidate_cache()
         else:
             for neuron_id in parent.neurons:
                 if neuron_id not in child.neurons:
                     child.neurons[neuron_id] = parent.neurons[neuron_id].copy()
+                    child.invalidate_cache()
 
         # Add remaining connections from the fitter parent with cycle prevention.
         if self.fitness > parent.fitness:
@@ -210,15 +224,19 @@ class SelfLearningNeuralNetwork(object):
                     src, tgt, _, _ = self.connections[connection_id]
                     if src in child.neurons and tgt in child.neurons and not child.creates_cycle(src, tgt):
                         child.connections[connection_id] = self.connections[connection_id].copy()
+                        child.invalidate_cache()
         else:
             for connection_id in parent.connections:
                 if connection_id not in child.connections:
                     src, tgt, _, _ = parent.connections[connection_id]
                     if src in child.neurons and tgt in child.neurons and not child.creates_cycle(src, tgt):
                         child.connections[connection_id] = parent.connections[connection_id].copy()
+                        child.invalidate_cache()
 
         child.input_ids = self.input_ids.copy()
         child.output_ids = self.output_ids.copy()
+        # Optionally, precompute and cache the topological order here.
+        child.topological_sort()
         return child
 
     def mutate(self, mutation_rate: float = 0.1):
@@ -395,10 +413,10 @@ def train():
             NN.fitness = accuracy * POPULATION_SIZE
             # if accuracy >= 95: # The ai has learnt how to atleast play, so now we benefit wins, losses, and draws, THIS VERSION may need new species to be perserved to grow and get better, however the simpler version below works great!
             #     NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
-            if accuracy <= 99:
-                NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
+            if accuracy <= 90:
+                NN.fitness += NN.wins - NN.losses ** 3 + NN.draws / 2
             else:
-                NN.fitness += (NN.wins * 2 - NN.losses ** 2 + NN.draws)
+                NN.fitness += (NN.wins * 2 - NN.losses ** 3 + NN.draws * 1.5)
 
 
         population.sort(key=lambda x: x.fitness, reverse=True)
@@ -406,10 +424,10 @@ def train():
         elite_population = population[:ELITE_SIZE]
 
         # Save the best Neural Network with its normalized fitness and generation
-        elite_population[0].save(f'models/ssnn_gen_{generation + 1}_fit_{elite_population[0].fitness / POPULATION_SIZE}.json')
+        elite_population[0].save(f'models/ssnn_gen_{generation + 1}_fit_{elite_population[0].fitness}.json')
 
         # Print the best Neural Network's fitness
-        print(f'Generation {generation + 1}, Fitness: {elite_population[0].fitness / POPULATION_SIZE}')
+        print(f'Generation {generation + 1}, Fitness: {elite_population[0].fitness}')
         # Print the best Neural Network's wins, losses, and draws
         print(f'Wins: {elite_population[0].wins}, Losses: {elite_population[0].losses}, Draws: {elite_population[0].draws}, Accuracy: {round(100 * elite_population[0].legal_count / elite_population[0].total_moves, 2)}%')
 
