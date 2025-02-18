@@ -240,76 +240,78 @@ class SelfLearningNeuralNetwork(object):
         child.topological_sort()
         return child
 
-    def mutate(self, mutation_rate: float = 0.1):
+    def mutate(self, mutation_rate: float = 0.1, MAX_MUT: int = 500):
         """
         Mutates the network by adding new connections/neurons or modifying existing ones.
         New connections are added only if they do not create a cycle.
         """
         self.invalidate_cache()
         # Add new connections to random input-output pairs.
-        for i in range(random.randint(1, 1 + len(self.neurons) // 2)):
-            source_neuron_id = random.choice(self.input_ids)
-            target_neuron_id = random.choice(self.output_ids)
-            if not self.creates_cycle(source_neuron_id, target_neuron_id):
-                weight = random.uniform(-1, 1)
-                connection_id = max(self.connections.keys()) + 1 if self.connections else 0
-                self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
+        for i in range(min(MAX_MUT, random.randint(1, 1 + len(self.neurons) // 2))):
+            # 50% chance: add a new connection between an input and an output neuron.
+            if random.random() < 0.5:
+                source_neuron_id = random.choice(self.input_ids)
+                target_neuron_id = random.choice(self.output_ids)
+                if not self.creates_cycle(source_neuron_id, target_neuron_id):
+                    weight = random.uniform(-1, 1)
+                    connection_id = max(self.connections.keys()) + 1 if self.connections else 0
+                    self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
 
-        # 50% chance: add a new hidden neuron between two random neurons.
-        if random.random() < 0.5:
-            new_id = max(self.neurons.keys()) + 1
-            n1 = random.choice(list(self.neurons.keys()))
-            n2 = random.choice(list(self.neurons.keys()))
-            while n1 == n2:
+            # 50% chance: add a new hidden neuron between two random neurons.
+            if random.random() < 0.5:
+                new_id = max(self.neurons.keys()) + 1
+                n1 = random.choice(list(self.neurons.keys()))
                 n2 = random.choice(list(self.neurons.keys()))
-            self.add_neuron(new_id, random.random())
-            if not self.creates_cycle(n1, new_id):
-                connection_id = max(self.connections.keys()) + 1 if self.connections else 0
-                self.add_connection(connection_id, n1, new_id, random.uniform(-1, 1))
-            if not self.creates_cycle(n2, new_id):
-                connection_id = max(self.connections.keys()) + 1 if self.connections else 0
-                self.add_connection(connection_id, n2, new_id, random.uniform(-1, 1))
+                while n1 == n2:
+                    n2 = random.choice(list(self.neurons.keys()))
+                self.add_neuron(new_id, random.random())
+                if not self.creates_cycle(n1, new_id):
+                    connection_id = max(self.connections.keys()) + 1 if self.connections else 0
+                    self.add_connection(connection_id, n1, new_id, random.uniform(-1, 1))
+                if not self.creates_cycle(n2, new_id):
+                    connection_id = max(self.connections.keys()) + 1 if self.connections else 0
+                    self.add_connection(connection_id, n2, new_id, random.uniform(-1, 1))
 
-        # 33% chance: add a new connection between any two neurons.
-        if random.random() < 0.33:
-            source_neuron_id = random.choice(list(self.neurons.keys()))
-            target_neuron_id = random.choice(list(self.neurons.keys()))
-            if source_neuron_id != target_neuron_id and not self.creates_cycle(source_neuron_id, target_neuron_id):
-                weight = random.uniform(-1, 1)
-                connection_id = max(self.connections.keys()) + 1 if self.connections else 0
-                self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
+            # 33% chance: add a new connection between any two neurons.
+            if random.random() < 0.33:
+                source_neuron_id = random.choice(list(self.neurons.keys()))
+                target_neuron_id = random.choice(list(self.neurons.keys()))
+                if source_neuron_id != target_neuron_id and not self.creates_cycle(source_neuron_id, target_neuron_id):
+                    weight = random.uniform(-1, 1)
+                    connection_id = max(self.connections.keys()) + 1 if self.connections else 0
+                    self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
 
-        # 25% chance: remove a connection (and clean up hidden neurons).
-        if random.random() < 0.25 and self.connections:
-            connection_id = random.choice(list(self.connections.keys()))
-            if self.connections[connection_id][3] < 10:
-                for neuron_id in list(self.neurons.keys()):
-                    if neuron_id in self.input_ids or neuron_id in self.output_ids:
-                        continue
-                    if neuron_id not in [self.connections[connection_id][0], self.connections[connection_id][1]]:
+            # 25% chance: remove a connection (and clean up hidden neurons).
+            if random.random() < 0.25 and self.connections:
+                connection_id = random.choice(list(self.connections.keys()))
+                if self.connections[connection_id][3] < 10:
+                    for neuron_id in list(self.neurons.keys()):
+                        if neuron_id in self.input_ids or neuron_id in self.output_ids:
+                            continue
+                        if neuron_id not in [self.connections[connection_id][0], self.connections[connection_id][1]]:
+                            del self.neurons[neuron_id]
+                    del self.connections[connection_id]
+
+            # 10% chance: remove a hidden neuron that is not used often.
+            if random.random() < 0.1 and self.neurons:
+                neuron_id = random.choice(list(self.neurons.keys()))
+                if neuron_id not in self.input_ids and neuron_id not in self.output_ids:
+                    if self.neurons[neuron_id][1] < 10:
                         del self.neurons[neuron_id]
-                del self.connections[connection_id]
+                        for connection_id in list(self.connections.keys()):
+                            src, tgt, _, _ = self.connections[connection_id]
+                            if src not in self.neurons or tgt not in self.neurons:
+                                del self.connections[connection_id]
 
-        # 10% chance: remove a hidden neuron that is not used often.
-        if random.random() < 0.1 and self.neurons:
-            neuron_id = random.choice(list(self.neurons.keys()))
-            if neuron_id not in self.input_ids and neuron_id not in self.output_ids:
-                if self.neurons[neuron_id][1] < 10:
-                    del self.neurons[neuron_id]
-                    for connection_id in list(self.connections.keys()):
-                        src, tgt, _, _ = self.connections[connection_id]
-                        if src not in self.neurons or tgt not in self.neurons:
-                            del self.connections[connection_id]
+            # Mutate weights.
+            if random.random() < mutation_rate and self.connections:
+                connection_id = random.choice(list(self.connections.keys()))
+                self.connections[connection_id][2] += random.uniform(-0.1, 0.1)
 
-        # Mutate weights.
-        if random.random() < mutation_rate and self.connections:
-            connection_id = random.choice(list(self.connections.keys()))
-            self.connections[connection_id][2] += random.uniform(-0.1, 0.1)
-
-        # Mutate biases.
-        if random.random() < mutation_rate and self.neurons:
-            neuron_id = random.choice(list(self.neurons.keys()))
-            self.neurons[neuron_id][0] += random.uniform(-0.1, 0.1)
+            # Mutate biases.
+            if random.random() < mutation_rate and self.neurons:
+                neuron_id = random.choice(list(self.neurons.keys()))
+                self.neurons[neuron_id][0] += random.uniform(-0.1, 0.1)
 
     def copy(self):
         new_network = SelfLearningNeuralNetwork(self.input_size, self.output_size)
