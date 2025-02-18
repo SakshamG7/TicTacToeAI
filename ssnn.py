@@ -20,17 +20,8 @@ import json  # For saving and loading the Neural Network
 from tictactoe import TicTacToe
 
 # Activation Function
-def SakshamsLinearCutOff_v1(x: float) -> float:
-    diff = 0.01
-    cut_off = 1
-    if x > cut_off:
-        return x * diff + (cut_off - diff)
-    elif x < -cut_off:
-        return x * diff - (cut_off - diff)
-    return x
-
 def SakshamsLinearCutOff(x: float) -> float:
-    diff = 0.1
+    diff = 0.1 # The differences 0.1 and 0.01 perfrom really well, I cant decide which one is better
     cut_off = 1
     if x > cut_off:
         return x * diff + (cut_off - diff)
@@ -43,36 +34,6 @@ def softmax(x):
     e_x = [math.exp(i) for i in x]
     return [i / sum(e_x) for i in e_x]
 
-
-import math
-import random
-import json
-
-def SakshamsLinearCutOff(x: float) -> float:
-    diff = 0.01
-    cut_off = 1
-    if x > cut_off:
-        return x * diff + (cut_off - diff)
-    elif x < -cut_off:
-        return x * diff - (cut_off - diff)
-    return x
-
-def softmax(x):
-    e_x = [math.exp(i) for i in x]
-    return [i / sum(e_x) for i in e_x]
-
-def SakshamsLinearCutOff(x: float) -> float:
-    diff = 0.01
-    cut_off = 1
-    if x > cut_off:
-        return x * diff + (cut_off - diff)
-    elif x < -cut_off:
-        return x * diff - (cut_off - diff)
-    return x
-
-def softmax(x):
-    e_x = [math.exp(i) for i in x]
-    return [i / sum(e_x) for i in e_x]
 
 class SelfLearningNeuralNetwork(object):
     def __init__(self, input_size: int = 9, output_size: int = 9):
@@ -434,7 +395,10 @@ def train():
             NN.fitness = accuracy * POPULATION_SIZE
             # if accuracy >= 95: # The ai has learnt how to atleast play, so now we benefit wins, losses, and draws, THIS VERSION may need new species to be perserved to grow and get better, however the simpler version below works great!
             #     NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
-            NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
+            if accuracy <= 99:
+                NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
+            else:
+                NN.fitness += (NN.wins * 2 - NN.losses ** 2 + NN.draws)
 
 
         population.sort(key=lambda x: x.fitness, reverse=True)
