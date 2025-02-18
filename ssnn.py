@@ -446,7 +446,7 @@ def train():
                 elif game.winner == 1:
                     NN.wins += 1
                 else:
-                    NN.losses += 1
+                    NN.losses += 2 # Really shouldnt lose to a player that makes random moves
             # Now the random player plays first
             for _ in range(RANDO_TURNS // 2):
                 random.seed(generation + turn) # Lowers the chance of the AI winning by luck
@@ -476,21 +476,12 @@ def train():
                 elif game.winner == 1:
                     NN.wins += 1
                 else:
-                    NN.losses += 1
+                    NN.losses += 2 # Really shouldnt lose to a player that makes random moves
 
         # Calculate the fitness of each Neural Network
         for NN in population:
-            # NN.fitness = NN.wins + NN.draws / 2 - NN.losses ** 2
-            accuracy = NN.legal_count / NN.total_moves * 100
-            NN.fitness = accuracy * (POPULATION_SIZE + RANDO_TURNS)
-            # if accuracy >= 95: # The ai has learnt how to atleast play, so now we benefit wins, losses, and draws, THIS VERSION may need new species to be perserved to grow and get better, however the simpler version below works great!
-            #     NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
-            if accuracy <= 90:
-                NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
-            else:
-                NN.fitness += (NN.wins * 2 - NN.losses ** 2 + NN.draws * 1.5)
-            if NN.legal_count == NN.total_moves: # Consistency is better than a one time win
-                NN.fitness *= 10
+            accuracy = NN.legal_count / NN.total_moves
+            NN.fitness = (NN.wins - NN.losses + NN.draws / 2) * accuracy * 100 / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
 
 
         population.sort(key=lambda x: x.fitness, reverse=True)
