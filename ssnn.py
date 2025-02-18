@@ -520,7 +520,7 @@ def train():
         POPULATION_SIZE = len(new_population) # Update the population size
 
     # Save the best Neural Network
-    population[0].save('ssnn.json')
+    population[0].save('ssnn_v2.json')
 
 
 def play(filename):
