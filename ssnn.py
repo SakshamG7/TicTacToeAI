@@ -366,7 +366,7 @@ def train():
     ELITE_SIZE = 3
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
-    RANDO_TURNS = 200 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
+    RANDO_TURNS = 500 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
 
