@@ -475,7 +475,7 @@ def train():
         for NN in population:
             # NN.fitness = NN.wins + NN.draws / 2 - NN.losses ** 2
             accuracy = NN.legal_count / NN.total_moves * 100
-            NN.fitness = accuracy * (POPULATION_SIZE + RANDO_TURNS)
+            NN.fitness = (accuracy * (POPULATION_SIZE + RANDO_TURNS)) ** 2 / 100
             # if accuracy >= 95: # The ai has learnt how to atleast play, so now we benefit wins, losses, and draws, THIS VERSION may need new species to be perserved to grow and get better, however the simpler version below works great!
             #     NN.fitness += NN.wins - NN.losses ** 2 + NN.draws / 2
             if accuracy <= 90:
