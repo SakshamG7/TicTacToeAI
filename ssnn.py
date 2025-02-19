@@ -425,7 +425,7 @@ def train():
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
     RANDO_TURNS = 800 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
-    BEST_TURNS = 100 # The number of times that the AI plays with the best model, this allows to check which model is the best, and weather we should update the best model
+    BEST_TURNS = 200 # The number of times that the AI plays with the best model, this allows to check which model is the best, and weather we should update the best model
 
     population = []
 
@@ -436,6 +436,7 @@ def train():
         population.append(SSNN)
     
     best_model = population[0].copy() # Just for the sake of having a variable to store the best model
+    best_model.save(f'best/best_gen_-1_{random.random()}.json') # Save the best model
 
     # Training loop, find the best Neural Network
     for generation in range(GENERATIONS):
