@@ -484,15 +484,15 @@ def train():
         # Calculate the fitness of each Neural Network
         for NN in population:
             confidence = 100 * NN.legal_count / NN.total_moves
-            #T1
+            #T1 - Good but slow, T4 gets the same results but faster, found with insane testing
             # NN.fitness = ((NN.wins - NN.losses + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
-            # T2
+            # T2 - Okay, worse than T1, took a step backward with this one
             # NN.fitness = (NN.wins + NN.draws / 2) * confidence ** 2 / 100 / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
             # NN.fitness -= NN.losses ** 2 / (POPULATION_SIZE) # Penalize the Neural Network for losing
-            # T3
+            # T3 - Good, better than T1, but not as good as T4.
             # NN.fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
             # NN.fitness -= NN.losses ** 2 / (POPULATION_SIZE)
-            # T4
+            # T4 - So far the best, found with insane amounts of testing
             NN.fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
             NN.fitness -= NN.losses ** 4 / (POPULATION_SIZE * confidence)
         population.sort(key=lambda x: x.fitness, reverse=True)
