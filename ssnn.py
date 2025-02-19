@@ -259,7 +259,7 @@ class SelfLearningNeuralNetwork(object):
         # Add new connections to random input-output pairs.
         for i in range(max(MIN_MUT, min(MAX_MUT, random.randint(0, 1 + len(self.neurons) // 2)))):
             # Remove a connection (and clean up hidden neurons).
-            if random.random() < mutation_rate / 4 and self.connections:
+            if random.random() < mutation_rate / 14 and self.connections:
                 connection_id = random.choice(list(self.connections.keys()))
                 if self.connections[connection_id][3] < 10:
                     for neuron_id in list(self.neurons.keys()):
@@ -270,7 +270,7 @@ class SelfLearningNeuralNetwork(object):
                     del self.connections[connection_id]
 
             # 1% chance: remove a hidden neuron that is not used often.
-            if random.random() < mutation_rate / 8 and self.neurons:
+            if random.random() < mutation_rate / 16 and self.neurons:
                 neuron_id = random.choice(list(self.neurons.keys()))
                 if neuron_id not in self.input_ids and neuron_id not in self.output_ids:
                     if self.neurons[neuron_id][1] < 10:
