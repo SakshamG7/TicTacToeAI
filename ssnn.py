@@ -250,14 +250,14 @@ class SelfLearningNeuralNetwork(object):
         return child
 
 
-    def mutate(self, mutation_rate: float = 0.1, MAX_MUT: int = 500, MIN_MUT: int = 1):
+    def mutate(self, mutation_rate: float = 0.1, MAX_MUT: int = 100, MIN_MUT: int = 1):
         """
         Mutates the network by adding new connections/neurons or modifying existing ones.
         New connections are added only if they do not create a cycle.
         """
         self.invalidate_cache()
         # Add new connections to random input-output pairs.
-        for i in range(max(MIN_MUT, min(MAX_MUT, random.randint(0, 1 + len(self.neurons) // 2)))):
+        for i in range(max(MIN_MUT, min(MAX_MUT, len(self.neurons) ** 0.5))):
             # Remove a connection (and clean up hidden neurons).
             if random.random() < mutation_rate / 14 and self.connections:
                 connection_id = random.choice(list(self.connections.keys()))
@@ -279,7 +279,8 @@ class SelfLearningNeuralNetwork(object):
                             src, tgt, _, _ = self.connections[connection_id]
                             if src not in self.neurons or tgt not in self.neurons:
                                 del self.connections[connection_id]
-
+        # Separated the loop to avoid deleting new neurons and connections, since it would be a waste.
+        for i in range(max(MIN_MUT, min(MAX_MUT, len(self.neurons) ** 0.5))):
             # Add a new hidden neuron between two random neurons.
             if random.random() < mutation_rate / 4:
                 new_id = max(self.neurons.keys()) + 1
@@ -303,7 +304,8 @@ class SelfLearningNeuralNetwork(object):
                     weight = random.uniform(-1, 1)
                     connection_id = max(self.connections.keys()) + 1 if self.connections else 0
                     self.add_connection(connection_id, source_neuron_id, target_neuron_id, weight)
-
+        
+        for i in range(max(MIN_MUT, min(MAX_MUT, len(self.neurons) ** 0.5))):
             # Mutate weights.
             if random.random() < mutation_rate and self.connections:
                 connection_id = random.choice(list(self.connections.keys()))
