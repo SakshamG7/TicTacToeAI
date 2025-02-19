@@ -354,6 +354,12 @@ class SelfLearningNeuralNetwork(object):
             }
             self.input_ids = data['input_ids']
             self.output_ids = data['output_ids']
+    
+    def get_params_count(self):
+        biases = len(self.neurons)
+        weights = len(self.connections)
+        total = biases + weights
+        return total
 
 
 def get_top_move(moves: list, game: TicTacToe):
@@ -506,7 +512,7 @@ def train():
         top_model.fitness = calculate_fitness(top_model, BEST_TURNS, 0)
         best_model.fitness = calculate_fitness(best_model, BEST_TURNS, 0)
 
-        if top_model.fitness > best_model.fitness:
+        if (top_model.fitness > best_model.fitness) or (top_model.fitness == best_model.fitness and top_model.legal_count == best_model.legal_count and top_model.get_params_count() < best_model.get_params_count()):
             best_model = top_model.copy()
             # Save the best model
             best_model.save(f'best/best_{generation}_{random.random()}.json')
