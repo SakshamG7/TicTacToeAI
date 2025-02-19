@@ -510,10 +510,11 @@ def train():
             best_model = top_model.copy()
             # Save the best model
             best_model.save(f'best/best_{generation}_{random.random()}.json')
-            # Remove the worst model from the elite population
-            elite_population.pop()
-            # Add this to the elite population
-            elite_population.append(best_model.copy())
+
+        # Remove the worst model from the elite population
+        elite_population.pop()
+        # Add this to the elite population
+        elite_population.append(best_model.copy())
 
         # Save the best Neural Network with its normalized fitness and generation
         # elite_population[0].save(f'models/ssnn_gen_{generation + 1}_fit_{elite_population[0].fitness}.json') # Not needed anymore, since we are saving the best model in the best folder
