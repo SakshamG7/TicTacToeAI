@@ -365,14 +365,61 @@ def get_top_move(moves: list, game: TicTacToe):
             best_value = moves[i]
     return best_move
 
-def train():
+def compare_models(model1: SelfLearningNeuralNetwork, model2: SelfLearningNeuralNetwork):
     game = TicTacToe()
+    user_turn = True
+    while not game.is_over():
+        if user_turn:
+            state = game.board
+            moves = model1.forward(state)
+            top_move = moves.index(max(moves))
+            best_move = get_top_move(moves, game)
+            model1.total_moves += 1
+            if top_move == best_move:
+                model1.legal_count += 1
+            game.play(best_move)
+        else:
+            state = game.board
+            moves = model2.forward(state)
+            top_move = moves.index(max(moves))
+            best_move = get_top_move(moves, game)
+            model2.total_moves += 1
+            if top_move == best_move:
+                model2.legal_count += 1
+            game.play(best_move)
+        user_turn = not user_turn
+    if game.winner == 0:
+        model1.draws += 1
+        model2.draws += 1
+    elif game.winner == 1:
+        model1.wins += 1
+        model2.losses += 1
+    else:
+        model1.losses += 1
+        model2.wins += 1
+
+def calculate_fitness(NN: SelfLearningNeuralNetwork, POPULATION_SIZE: int, RANDO_TURNS: int):
+    confidence = 100 * NN.legal_count / NN.total_moves
+    #T1 - Good but slow, T4 gets the same results but faster, found with insane testing
+    # fitness = ((NN.wins - NN.losses + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
+    # T2 - Okay, worse than T1, took a step backward with this one
+    # fitness = (NN.wins + NN.draws / 2) * confidence ** 2 / 100 / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
+    # fitness -= NN.losses ** 2 / (POPULATION_SIZE) # Penalize the Neural Network for losing
+    # T3 - Good, better than T1, but not as good as T4.
+    # fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
+    # fitness -= NN.losses ** 2 / (POPULATION_SIZE)
+    # T4 - So far the best, found with insane amounts of testing
+    fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) - NN.losses ** 4 / (POPULATION_SIZE * confidence)
+    return fitness
+
+def train():
     # Parameters
     POPULATION_SIZE = 100
     ELITE_SIZE = 10
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
     RANDO_TURNS = 800 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
+    BEST_TURNS = 100 # The number of times that the AI plays with the best model, this allows to check which model is the best, and weather we should update the best model
 
     population = []
 
@@ -381,6 +428,8 @@ def train():
         SSNN = SelfLearningNeuralNetwork(9, 9)
         SSNN.mutate(0.25)
         population.append(SSNN)
+    
+    best_model = population[0].copy() # Just for the sake of having a variable to store the best model
 
     # Training loop, find the best Neural Network
     for generation in range(GENERATIONS):
@@ -388,121 +437,86 @@ def train():
         for NN in population:
             # Complete with the rest of the population
             for opponent in population:
-                game.reset()
-                user_turn = True
-                while not game.is_over():
-                    if user_turn:
-                        state = game.board
-                        moves = NN.forward(state)
-                        top_move = moves.index(max(moves))
-                        best_move = get_top_move(moves, game)
-                        if top_move == best_move:
-                            NN.legal_count += 1
-                        NN.total_moves += 1
-                        game.play(best_move)
-                    else:
-                        state = game.board
-                        moves = opponent.forward(state)
-                        top_move = moves.index(max(moves))
-                        best_move = get_top_move(moves, game)
-                        if top_move == best_move:
-                            opponent.legal_count += 1
-                        opponent.total_moves += 1
-                        game.play(best_move)
-                    user_turn = not user_turn
-                # Reward the winner, penalize the loser, and partially reward a draw
-                # game.winner, if X wins, returns 1, if O wins, returns -1, if draw, returns 0
-                if game.winner == 0:
-                    NN.draws += 1
-                    opponent.draws += 1
-                elif game.winner == 1:
-                    NN.wins += 1
-                    opponent.losses += 1
-                else:
-                    NN.losses += 1
-                    opponent.wins += 1
+                compare_models(NN, opponent)
             
+            random_game = TicTacToe()
             # Play against a random player to explore more
-            for turn in range(RANDO_TURNS // 2):
+            for turn in range(RANDO_TURNS):
                 # random.seed(generation + turn) # This is to make the randomness more consistent and less dependant on luck
-                game.reset()
-                user_turn = True
-                while not game.is_over():
-                    state = game.board
-                    if user_turn:
-                        moves = NN.forward(state)
-                        top_move = moves.index(max(moves))
-                        best_move = get_top_move(moves, game)
-                        if top_move == best_move:
-                            NN.legal_count += 1
-                        NN.total_moves += 1
-                        game.play(best_move)
-                    else:
-                        moves = [0 for _ in range(9)]
-                        # Delete non valid moves
-                        for move in moves:
-                            if not game.is_valid_move(move):
-                                moves.remove(move)
-                        best_move = random.choice(moves)
-                        game.play(best_move)
-                    user_turn = not user_turn
-                if game.winner == 0:
-                    NN.draws += 1
-                elif game.winner == 1:
-                    NN.wins += 1
+                random_game.reset()
+                # Half of the time the AI plays first, the other half the player that makes random moves plays first
+                if turn % 2 == 0:
+                    user_turn = False
                 else:
-                    NN.losses += 10 # Really shouldnt lose to a player that makes random moves
-            # Now the random player plays first
-            for _ in range(RANDO_TURNS // 2):
-                # random.seed(generation + turn) # Lowers the chance of the AI winning by luck
-                game.reset()
-                user_turn = False
-                while not game.is_over():
-                    state = game.board
+                    user_turn = True
+                while not random_game.is_over():
+                    state = random_game.board
                     if user_turn:
                         moves = NN.forward(state)
                         top_move = moves.index(max(moves))
-                        best_move = get_top_move(moves, game)
+                        best_move = get_top_move(moves, random_game)
                         if top_move == best_move:
                             NN.legal_count += 1
                         NN.total_moves += 1
-                        game.play(best_move)
+                        random_game.play(best_move)
                     else:
                         moves = [0 for _ in range(9)]
                         # Delete non valid moves
                         for move in moves:
-                            if not game.is_valid_move(move):
+                            if not random_game.is_valid_move(move):
                                 moves.remove(move)
                         best_move = random.choice(moves)
-                        game.play(best_move)
+                        random_game.play(best_move)
                     user_turn = not user_turn
-                if game.winner == 0:
+                if random_game.winner == 0:
                     NN.draws += 1
-                elif game.winner == 1:
+                elif random_game.winner == 1:
                     NN.wins += 1
                 else:
                     NN.losses += 10 # Really shouldnt lose to a player that makes random moves
 
         # Calculate the fitness of each Neural Network
         for NN in population:
-            confidence = 100 * NN.legal_count / NN.total_moves
-            #T1 - Good but slow, T4 gets the same results but faster, found with insane testing
-            # NN.fitness = ((NN.wins - NN.losses + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
-            # T2 - Okay, worse than T1, took a step backward with this one
-            # NN.fitness = (NN.wins + NN.draws / 2) * confidence ** 2 / 100 / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
-            # NN.fitness -= NN.losses ** 2 / (POPULATION_SIZE) # Penalize the Neural Network for losing
-            # T3 - Good, better than T1, but not as good as T4.
-            # NN.fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
-            # NN.fitness -= NN.losses ** 2 / (POPULATION_SIZE)
-            # T4 - So far the best, found with insane amounts of testing
-            NN.fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
-            NN.fitness -= NN.losses ** 4 / (POPULATION_SIZE * confidence)
-        population.sort(key=lambda x: x.fitness, reverse=True)
+            NN.fitness = calculate_fitness(NN, POPULATION_SIZE, RANDO_TURNS)
         
+        population.sort(key=lambda x: x.fitness, reverse=True)
         elite_population = population[:ELITE_SIZE]
+        
+        # Play against the best model to see if the Neural Network is better
+        top_model = population[0].copy()
+        # Reset the stats of the top model and the best model
+        top_model.wins = 0
+        top_model.losses = 0
+        top_model.draws = 0
+        top_model.legal_count = 0
+        top_model.total_moves = 0
+        best_model.wins = 0
+        best_model.losses = 0
+        best_model.draws = 0
+        best_model.legal_count = 0
+        best_model.total_moves = 0
+        
+        # Make the Neural Network play against the best model
+        for turn in range(max(1, BEST_TURNS // 2)):
+            # Makes the models play as opposites too
+            compare_models(top_model, best_model)
+            compare_models(best_model, top_model)
+        
+        # Calculate the fitness of the top model and the best model
+        top_model.fitness = calculate_fitness(top_model, BEST_TURNS, 0)
+        best_model.fitness = calculate_fitness(best_model, BEST_TURNS, 0)
+
+        if top_model.fitness > best_model.fitness:
+            best_model = top_model.copy()
+            # Save the best model
+            best_model.save(f'best/best_{generation}_fit_{best_model.fitness}.json')
+            # Remove the worst model from the elite population
+            elite_population.pop()
+            # Add this to the elite population
+            elite_population.append(best_model.copy())
 
         # Save the best Neural Network with its normalized fitness and generation
-        elite_population[0].save(f'models/ssnn_gen_{generation + 1}_fit_{elite_population[0].fitness}.json')
+        # elite_population[0].save(f'models/ssnn_gen_{generation + 1}_fit_{elite_population[0].fitness}.json') # Not needed anymore, since we are saving the best model in the best folder
 
         # Print the best Neural Network's fitness
         print(f'Generation {generation + 1}, Fitness: {elite_population[0].fitness}')
@@ -534,7 +548,7 @@ def train():
         POPULATION_SIZE = len(new_population) # Update the population size
 
     # Save the best Neural Network
-    population[0].save('ssnn_v2.json')
+    best_model.save('models/ssnn_best.json')
 
 
 def play(filename):
