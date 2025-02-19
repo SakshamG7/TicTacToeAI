@@ -490,8 +490,11 @@ def train():
             # NN.fitness = (NN.wins + NN.draws / 2) * confidence ** 2 / 100 / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
             # NN.fitness -= NN.losses ** 2 / (POPULATION_SIZE) # Penalize the Neural Network for losing
             # T3
+            # NN.fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
+            # NN.fitness -= NN.losses ** 2 / (POPULATION_SIZE)
+            # T4
             NN.fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
-            NN.fitness -= NN.losses ** 2 / (POPULATION_SIZE)
+            NN.fitness -= NN.losses ** 4 / (POPULATION_SIZE * confidence)
         population.sort(key=lambda x: x.fitness, reverse=True)
         
         elite_population = population[:ELITE_SIZE]
