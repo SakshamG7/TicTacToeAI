@@ -509,7 +509,7 @@ def train():
         if top_model.fitness > best_model.fitness:
             best_model = top_model.copy()
             # Save the best model
-            best_model.save(f'best/best_{generation}_{random.random}.json')
+            best_model.save(f'best/best_{generation}_{random.random()}.json')
             # Remove the worst model from the elite population
             elite_population.pop()
             # Add this to the elite population
