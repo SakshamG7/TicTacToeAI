@@ -568,6 +568,10 @@ def play(filename):
     game = TicTacToe()
     user_first = input('Do you want to play first? (y/n): ')
     user_turn = user_first.lower() == 'y'
+    if user_turn:
+        ai_turn = -1
+    else:
+        ai_turn = 1
 
     while not game.is_over():
         if user_turn:
@@ -578,7 +582,7 @@ def play(filename):
                 continue
             game.play(move - 1)
         else:
-            state = game.board
+            state = game.board + [ai_turn]
             moves = SSNN.forward(state)
             best_move = get_top_move(moves, game)
             game.play(best_move)
@@ -600,4 +604,4 @@ def play(filename):
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
     train()
-    # play('models/ssnn.json')
+    # play('best_v2/ssnn.json')
