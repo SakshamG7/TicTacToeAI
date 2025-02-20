@@ -40,7 +40,7 @@ def softmax(x):
 
 
 class SelfLearningNeuralNetwork(object):
-    def __init__(self, input_size: int = 9, output_size: int = 9):
+    def __init__(self, input_size: int = 10, output_size: int = 9):
         self.input_size = input_size
         self.output_size = output_size
         self.neurons = {}       # neuron_id -> [bias, usage, value]
@@ -376,7 +376,7 @@ def compare_models(model1: SelfLearningNeuralNetwork, model2: SelfLearningNeural
     user_turn = True
     while not game.is_over():
         if user_turn:
-            state = game.board
+            state = game.board + [1]
             moves = model1.forward(state)
             top_move = moves.index(max(moves))
             best_move = get_top_move(moves, game)
@@ -385,7 +385,7 @@ def compare_models(model1: SelfLearningNeuralNetwork, model2: SelfLearningNeural
                 model1.legal_count += 1
             game.play(best_move)
         else:
-            state = game.board
+            state = game.board + [-1]
             moves = model2.forward(state)
             top_move = moves.index(max(moves))
             best_move = get_top_move(moves, game)
@@ -425,18 +425,19 @@ def train():
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
     RANDO_TURNS = 800 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
-    BEST_TURNS = 200 # The number of times that the AI plays with the best model, this allows to check which model is the best, and weather we should update the best model
+    # More doesn't always mean better for the number of BEST_TURNS, since they will just play the same game over and over again
+    BEST_TURNS = 2 # The number of times that the AI plays with the best model, this allows to check which model is the best, and weather we should update the best model
 
     population = []
 
     # Setup the initial population, mutate it too to add some diversity
     for _ in range(POPULATION_SIZE):
-        SSNN = SelfLearningNeuralNetwork(9, 9)
+        SSNN = SelfLearningNeuralNetwork(10, 9) # Added 1 more input neuron to the Neural Network to represent the current player, silly mistake which probaby caused the lower confidence but still high wins.
         SSNN.mutate(0.25)
         population.append(SSNN)
     
     best_model = population[0].copy() # Just for the sake of having a variable to store the best model
-    best_model.save(f'best/best_gen_-1_{random.random()}.json') # Save the best model
+    best_model.save(f'best_v2/best_gen_-1_{random.random()}.json') # Save the best model
 
     # Training loop, find the best Neural Network
     for generation in range(GENERATIONS):
@@ -454,11 +455,13 @@ def train():
                 # Half of the time the AI plays first, the other half the player that makes random moves plays first
                 if turn % 2 == 0:
                     user_turn = False
+                    ai_turn = -1
                 else:
                     user_turn = True
+                    ai_turn = 1
                 while not random_game.is_over():
-                    state = random_game.board
                     if user_turn:
+                        state = random_game.board + [ai_turn]
                         moves = NN.forward(state)
                         top_move = moves.index(max(moves))
                         best_move = get_top_move(moves, random_game)
