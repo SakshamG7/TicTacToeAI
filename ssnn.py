@@ -415,16 +415,18 @@ def calculate_fitness(NN: SelfLearningNeuralNetwork, POPULATION_SIZE: int, RANDO
     # fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
     # fitness -= NN.losses ** 2 / (POPULATION_SIZE)
     # T4 - So far the best, found with insane amounts of testing
-    fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) - NN.losses ** 4 / (POPULATION_SIZE * confidence)
+    # fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) - NN.losses ** 4 / (POPULATION_SIZE * confidence)
+    # T4.5 - Slight modification to T4, to avoid 1 loss being worth nothing
+    fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) - ((NN.losses + 1) ** 4 - 1) / (POPULATION_SIZE * confidence)
     return fitness
 
 def train():
     # Parameters
     POPULATION_SIZE = 100
-    ELITE_SIZE = 10
+    ELITE_SIZE = 20
     GENERATIONS = 10000
-    MUTATION_RATE = 0.1
-    RANDO_TURNS = 800 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
+    MUTATION_RATE = 0.15
+    RANDO_TURNS = 50 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
     # More doesn't always mean better for the number of BEST_TURNS, since they will just play the same game over and over again
     BEST_TURNS = 2 # The number of times that the AI plays with the best model, this allows to check which model is the best, and weather we should update the best model
 
