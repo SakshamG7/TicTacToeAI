@@ -408,16 +408,16 @@ def calculate_fitness(NN: SelfLearningNeuralNetwork, POPULATION_SIZE: int, RANDO
     confidence = 100 * NN.legal_count / NN.total_moves
     #T1 - Good but slow, T4 gets the same results but faster, found with insane testing
     # fitness = ((NN.wins - NN.losses + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
-    # T2 - Okay, worse than T1, took a step backward with this one
-    # fitness = (NN.wins + NN.draws / 2) * confidence ** 2 / 100 / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
-    # fitness -= NN.losses ** 2 / (POPULATION_SIZE) # Penalize the Neural Network for losing
+    # T2+4 - Great, better than T3 but further testing is required to compare to the original, took a step forward with this one
+    fitness = ((NN.wins + NN.draws / 2) * (confidence ** 2 / 100)) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
+    fitness -= NN.losses ** 4 / (POPULATION_SIZE * confidence) # Penalize the Neural Network for losing
     # T3 - Good, better than T1, but not as good as T4.
     # fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) # Normalize the fitness
     # fitness -= NN.losses ** 2 / (POPULATION_SIZE)
     # T4 - So far the best, found with insane amounts of testing
     # fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) - NN.losses ** 4 / (POPULATION_SIZE * confidence)
     # T4.5 - Slight modification to T4, to avoid 1 loss being worth nothing
-    fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) - ((NN.losses + 1) ** 4 - 1) / (POPULATION_SIZE * confidence)
+    # fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) - ((NN.losses + 1) ** 4 - 1) / (POPULATION_SIZE * confidence)
     return fitness
 
 def train():
