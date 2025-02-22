@@ -435,8 +435,15 @@ def train():
     # Setup the initial population, mutate it too to add some diversity
     for _ in range(POPULATION_SIZE):
         SSNN = SelfLearningNeuralNetwork(10, 9) # Added 1 more input neuron to the Neural Network to represent the current player, silly mistake which probaby caused the lower confidence but still high wins.
-        SSNN.mutate(0.25)
+        # Preconnect all input neurons to all output neurons, gives the AI a head start and speeds up the learning process
+        c_id = 0
+        for i in range(10):
+            for j in range(9):
+                SSNN.add_connection(c_id, i, j + 10, random.uniform(-1, 1))
+                c_id += 1
+        SSNN.mutate(0.25, 100, 25)
         population.append(SSNN)
+
     
     best_model = population[0].copy() # Just for the sake of having a variable to store the best model
     best_model.save(f'best_v2/best_gen_-1_{random.random()}.json') # Save the best model
@@ -482,10 +489,10 @@ def train():
                     user_turn = not user_turn
                 if random_game.winner == 0:
                     NN.draws += 1
-                elif random_game.winner == 1:
+                elif random_game.winner == ai_turn:
                     NN.wins += 1
                 else:
-                    NN.losses += 10 # Really shouldnt lose to a player that makes random moves
+                    NN.losses += RANDO_TURNS # Really shouldnt lose to a player that makes random moves
 
         # Calculate the fitness of each Neural Network
         for NN in population:
@@ -524,7 +531,7 @@ def train():
             best_model.save(f'best_v2/best_{generation}_{random.random()}.json')
 
         # Remove the worst model from the elite population
-        elite_population.pop()
+        # elite_population.pop()
         # Add this to the elite population
         elite_population.append(best_model.copy())
 
@@ -537,8 +544,10 @@ def train():
         print(f'Wins: {elite_population[0].wins}, Losses: {elite_population[0].losses}, Draws: {elite_population[0].draws}, Confidence: {round(100 * elite_population[0].legal_count / elite_population[0].total_moves, 2)}%')
 
         # Crossover the elite population to create the next generation and keep the elite population
-        new_population = elite_population.copy()
-        for _ in range(POPULATION_SIZE - ELITE_SIZE):
+        # new_population = elite_population.copy()
+        new_population = []
+        pop_len = len(new_population)
+        for _ in range(POPULATION_SIZE - pop_len):
             parent1 = random.choice(elite_population)
             parent1 = parent1.copy() # Prevents the parent from being modified
             parent2 = random.choice(elite_population)
