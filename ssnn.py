@@ -4,8 +4,8 @@ Saksham's Self Learning Neural Network
 This Neural Network will play tic-tac-toe and maybe chess, to learn from its mistakes and improve its gameplay
 
 Author: Saksham Goel
-Date: Feb 17, 2025
-Version: 2.0
+Date: Feb 22, 2025
+Version: 3.0
 
 Github: @SakshamG7
 Organization: AceIQ
