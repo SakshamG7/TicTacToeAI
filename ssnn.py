@@ -20,18 +20,22 @@ import json  # For saving and loading the Neural Network
 from tictactoe import TicTacToe
 
 # Activation Function
-def SakshamsLinearCutOff(x: float) -> float:
-    diff = 0.5
-    # 0.4 seems to work the best for tuning Confidence and 0.5 works best with wins/loss/draw ratio, found with even further testing
-    # 0.45 looks promising
-    # 0.5 is getting better, just takes some time
-    # 0.8 is also promising and might be better than 0.5
-    cut_off = 1
-    if x > cut_off:
-        return x * diff + (cut_off - diff)
-    elif x < -cut_off:
-        return x * diff - (cut_off - diff)
-    return x
+# def SakshamsLinearCutOff(x: float) -> float:
+#     diff = 0.5
+#     # 0.4 seems to work the best for tuning Confidence and 0.5 works best with wins/loss/draw ratio, found with even further testing
+#     # 0.45 looks promising
+#     # 0.5 is getting better, just takes some time
+#     # 0.8 is also promising and might be better than 0.5
+#     cut_off = 1
+#     if x > cut_off:
+#         return x * diff + (cut_off - diff)
+#     elif x < -cut_off:
+#         return x * diff - (cut_off - diff)
+#     return x
+
+
+def LeakyReLU(x: float) -> float:
+    return max(0.01 * x, x)
 
 
 def softmax(x):
@@ -154,7 +158,7 @@ class SelfLearningNeuralNetwork(object):
                         if source_id not in self.neurons:
                             continue
                         total_input += self.neurons[source_id][2] * conn[2]
-                self.neurons[neuron_id][2] = SakshamsLinearCutOff(total_input)
+                self.neurons[neuron_id][2] = LeakyReLU(total_input)
         else:
             # Cycle detected: use iterative updates.
             max_iterations = 10
@@ -173,7 +177,7 @@ class SelfLearningNeuralNetwork(object):
                                 if source_id not in self.neurons:
                                     continue
                                 total_input += self.neurons[source_id][2] * conn[2]
-                        new_value = SakshamsLinearCutOff(total_input)
+                        new_value = LeakyReLU(total_input)
                         updated_values[neuron_id] = new_value
                         delta = max(delta, abs(new_value - self.neurons[neuron_id][2]))
                 for neuron_id in self.neurons:
@@ -425,7 +429,7 @@ def train():
     POPULATION_SIZE = 100
     ELITE_SIZE = 20
     GENERATIONS = 10000
-    MUTATION_RATE = 0.15
+    MUTATION_RATE = 0.2
     RANDO_TURNS = 500 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
     # More doesn't always mean better for the number of BEST_TURNS, since they will just play the same game over and over again
     BEST_TURNS = 2 # The number of times that the AI plays with the best model, this allows to check which model is the best, and weather we should update the best model
@@ -446,7 +450,7 @@ def train():
 
     
     best_model = population[0].copy() # Just for the sake of having a variable to store the best model
-    best_model.save(f'best_v2/best_gen_-1_{random.random()}.json') # Save the best model
+    best_model.save(f'best_relu_v1/best_gen_-1_{random.random()}.json') # Save the best model
 
     # Training loop, find the best Neural Network
     for generation in range(GENERATIONS):
@@ -528,7 +532,7 @@ def train():
         if (top_model.fitness > best_model.fitness) or (top_model.fitness == best_model.fitness and top_model.get_params_count() < best_model.get_params_count()):
             best_model = top_model.copy()
             # Save the best model
-            best_model.save(f'best_v2/best_{generation}_{random.random()}.json')
+            best_model.save(f'best_relu_v1/best_{generation}_{random.random()}.json')
 
         # Remove the worst model from the elite population
         # elite_population.pop()
@@ -615,4 +619,4 @@ def play(filename):
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
     train()
-    # play('best_v2/ssnn.json')
+    # play('best_relu_v1/ssnn.json')
