@@ -386,7 +386,7 @@ def compare_models(model1: SelfLearningNeuralNetwork, model2: SelfLearningNeural
             best_move = get_top_move(moves, game)
             model1.total_moves += 1
             if top_move == best_move:
-                model1.legal_count += 1
+                model1.legal_count += 1 + math.log10(moves[best_move])
             game.play(best_move)
         else:
             state = game.board + [-1]
@@ -395,7 +395,7 @@ def compare_models(model1: SelfLearningNeuralNetwork, model2: SelfLearningNeural
             best_move = get_top_move(moves, game)
             model2.total_moves += 1
             if top_move == best_move:
-                model2.legal_count += 1
+                model2.legal_count += 1 + math.log10(moves[best_move])
             game.play(best_move)
         user_turn = not user_turn
     if game.winner == 0:
@@ -430,9 +430,7 @@ def train():
     ELITE_SIZE = 20
     GENERATIONS = 10000
     MUTATION_RATE = 0.2
-    RANDO_TURNS = 500 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
-    # More doesn't always mean better for the number of BEST_TURNS, since they will just play the same game over and over again
-    BEST_TURNS = 2 # The number of times that the AI plays with the best model, this allows to check which model is the best, and weather we should update the best model
+    RANDO_TURNS = 200 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
 
@@ -479,7 +477,7 @@ def train():
                         top_move = moves.index(max(moves))
                         best_move = get_top_move(moves, random_game)
                         if top_move == best_move:
-                            NN.legal_count += 1
+                            NN.legal_count += 1 + math.log10(moves[best_move])
                         NN.total_moves += 1
                         random_game.play(best_move)
                     else:
@@ -519,25 +517,22 @@ def train():
         best_model.legal_count = 0
         best_model.total_moves = 0
         
-        # Make the Neural Network play against the best model
-        for turn in range(max(1, BEST_TURNS // 2)):
-            # Makes the models play as opposites too
-            compare_models(top_model, best_model)
-            compare_models(best_model, top_model)
+        compare_models(top_model, best_model)
+        compare_models(best_model, top_model)
         
         # Calculate the fitness of the top model and the best model
-        top_model.fitness = calculate_fitness(top_model, BEST_TURNS, 0)
-        best_model.fitness = calculate_fitness(best_model, BEST_TURNS, 0)
+        top_model.fitness = calculate_fitness(top_model, 2, 0)
+        best_model.fitness = calculate_fitness(best_model, 2, 0)
 
-        if (top_model.fitness > best_model.fitness) or (top_model.fitness == best_model.fitness and top_model.get_params_count() < best_model.get_params_count()):
+        if (top_model.fitness > best_model.fitness) or (top_model.fitness == best_model.fitness and (top_model.get_params_count() < best_model.get_params_count() or top_model.legal_count / top_model.total_moves > best_model.legal_count / best_model.total_moves)):
             best_model = top_model.copy()
             # Save the best model
             best_model.save(f'best_relu_v1/best_{generation}_{random.random()}.json')
-
-        # Remove the worst model from the elite population
-        # elite_population.pop()
-        # Add this to the elite population
-        elite_population.append(best_model.copy())
+        else:
+            # Remove the worst model from the elite population
+            # elite_population.pop()
+            # Add the best into the elite population
+            elite_population.append(best_model.copy())
 
         # Save the best Neural Network with its normalized fitness and generation
         # elite_population[0].save(f'models/ssnn_gen_{generation + 1}_fit_{elite_population[0].fitness}.json') # Not needed anymore, since we are saving the best model in the best folder
@@ -553,11 +548,19 @@ def train():
         pop_len = len(new_population)
         for _ in range(POPULATION_SIZE - pop_len):
             parent1 = random.choice(elite_population)
+
+            elite_population.remove(parent1)
+            
             parent1 = parent1.copy() # Prevents the parent from being modified
             parent2 = random.choice(elite_population)
             parent2 = parent2.copy() # Prevents the parent from being modified
-            child = parent1.crossover(parent2)
-            child.mutate(MUTATION_RATE)
+            
+            elite_population.append(parent1.copy())
+            
+            child: SelfLearningNeuralNetwork = parent1.crossover(parent2)
+            # child.mutate(MUTATION_RATE, 25, 1)
+            child.mutate(MUTATION_RATE, 25, 1)
+
             new_population.append(child)
         
         population = []
