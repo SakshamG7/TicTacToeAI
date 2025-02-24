@@ -430,7 +430,7 @@ def train():
     ELITE_SIZE = 20
     GENERATIONS = 10000
     MUTATION_RATE = 0.2
-    RANDO_TURNS = max(1, POPULATION_SIZE // 5) # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
+    RANDO_TURNS = max(1, POPULATION_SIZE // 2) # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
 
@@ -451,7 +451,12 @@ def train():
     best_model.save(f'best_relu_v1/best_gen_-1_{random.random()}.json') # Save the best model
 
     # Training loop, find the best Neural Network
+    RANDO_TURNS += 1 # Add 1 to the random turns to make the AI explore more in the beginning
     for generation in range(GENERATIONS):
+        # Subtract Random turns over time to make the AI more efficient
+        if generation % 50 == 0:
+            RANDO_TURNS = max(1, RANDO_TURNS - 1)
+            print(f'Random Turns: {RANDO_TURNS}')
         # random.seed(generation) might be useful to keep the randomness more consistent and make it less dependant on luck
         for NN in population:
             # Complete with the rest of the population
@@ -486,7 +491,17 @@ def train():
                         for move in moves:
                             if not random_game.is_valid_move(move):
                                 moves.remove(move)
-                        best_move = random.choice(moves)
+                        # If there is a winning move, play it
+                        rando_win = random_game.check_win_move(-ai_turn)
+                        player_win = random_game.check_win_move(ai_turn)
+
+                        # This allows the Random player to be more competitive against the AI, to make the AI learn to play better
+                        if rando_win != -1: # The random player will always play the winning move if there is one
+                            best_move = rando_win
+                        elif random_game.check_win_move(ai_turn) != -1: # The random player will always block the winning move if there is one
+                            best_move = player_win
+                        else: # Otherwise, play a random move
+                            best_move = random.choice(moves)
                         random_game.play(best_move)
                     user_turn = not user_turn
                 if random_game.winner == 0:

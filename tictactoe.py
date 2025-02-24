@@ -68,3 +68,14 @@ class TicTacToe(object):
     
     def is_over(self) -> bool:
         return self.over
+    
+    # Check if a player has a move that will win the game
+    def check_win_move(self, player: int) -> int:
+        for i in range(9):
+            if self.board[i] == 0:
+                self.board[i] = player
+                if self.check_winner():
+                    self.board[i] = 0
+                    return i
+                self.board[i] = 0
+        return -1
