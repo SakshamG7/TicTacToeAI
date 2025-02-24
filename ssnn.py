@@ -4,8 +4,8 @@ Saksham's Self Learning Neural Network
 This Neural Network will play tic-tac-toe and maybe chess, to learn from its mistakes and improve its gameplay
 
 Author: Saksham Goel
-Date: Feb 22, 2025
-Version: 3.0
+Date: Feb 23, 2025
+Version: 4.0
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -430,7 +430,7 @@ def train():
     ELITE_SIZE = 20
     GENERATIONS = 10000
     MUTATION_RATE = 0.2
-    RANDO_TURNS = max(1, POPULATION_SIZE // 2) # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
+    RANDO_TURNS = 500 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
 
@@ -448,7 +448,7 @@ def train():
 
     
     best_model = population[0].copy() # Just for the sake of having a variable to store the best model
-    best_model.save(f'best_relu_v1/best_gen_-1_{random.random()}.json') # Save the best model
+    best_model.save(f'best_relu_v2/best_gen_-1_{random.random()}.json') # Save the best model
 
     # Training loop, find the best Neural Network
     RANDO_TURNS += 1 # Add 1 to the random turns to make the AI explore more in the beginning
@@ -542,7 +542,7 @@ def train():
         if (top_model.fitness > best_model.fitness) or (top_model.fitness == best_model.fitness and (top_model.get_params_count() < best_model.get_params_count() or top_model.legal_count / top_model.total_moves > best_model.legal_count / best_model.total_moves)):
             best_model = top_model.copy()
             # Save the best model
-            best_model.save(f'best_relu_v1/best_{generation}_{random.random()}.json')
+            best_model.save(f'best_relu_v2/best_{generation}_{random.random()}.json')
         else:
             # Remove the worst model from the elite population
             # elite_population.pop()
@@ -637,4 +637,4 @@ def play(filename):
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
     train()
-    # play('best_relu_v1/ssnn.json')
+    # play('best_relu_v2/ssnn.json')
