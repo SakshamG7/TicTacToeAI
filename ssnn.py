@@ -389,7 +389,7 @@ def compare_models(model1: SelfLearningNeuralNetwork, model2: SelfLearningNeural
             if x != 9:
                 game.play(x)
                 if o != 9: # o should never play first
-                    game.play(-o)
+                    game.play(o)
                     user_turn = False
             
             while not game.is_over():
