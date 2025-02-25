@@ -436,7 +436,7 @@ def calculate_fitness(NN: SelfLearningNeuralNetwork, POPULATION_SIZE: int, RANDO
 
 def train():
     # Parameters
-    POPULATION_SIZE = 10
+    POPULATION_SIZE = 25
     ELITE_SIZE = 5
     GENERATIONS = 10000
     MUTATION_RATE = 0.1
@@ -556,8 +556,14 @@ def train():
         
         # Calculate the fitness of the top model and the best model
         top_model.fitness = calculate_fitness(top_model, 2, 0)
-        best_model.fitness = calculate_fitness(best_model, 2, 0) * 1.1 # The top model must be alot better than the best model to replace it, this is to prevent the top model to forget more advanced strategies
-        
+        best_model.fitness = calculate_fitness(best_model, 2, 0)
+        # The top model must be alot better than the best model to replace it, this is to prevent the top model to forget more advanced strategies
+
+        if best_model.fitness < 0:
+            best_model.fitness *= 0.9
+        else:
+            best_model.fitness *= 1.1
+
         # Print the best model and top model's stats
         print(f'Top Model:\tFitness:\t{round(top_model.fitness, 2)},\tWins:\t{top_model.wins},\tLosses:\t{top_model.losses},\tDraws:\t{top_model.draws},\tConfidence:\t{round(100 * top_model.legal_count / top_model.total_moves, 2)}%')
         print(f'Best Model:\tFitness:\t{round(best_model.fitness, 2)},\tWins:\t{best_model.wins},\tLosses:\t{best_model.losses},\tDraws:\t{best_model.draws},\tConfidence:\t{round(100 * best_model.legal_count / best_model.total_moves, 2)}%')
@@ -653,5 +659,6 @@ def play(filename):
             print('You lose!')
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
-    train()
+    # train()
     # play('best_relu_v3/ssnn.json')
+    play('best_relu_v2/best_1454_0.02016229641832401.json')
