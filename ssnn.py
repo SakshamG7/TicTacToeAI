@@ -453,12 +453,12 @@ def train():
     for _ in range(POPULATION_SIZE):
         SSNN = SelfLearningNeuralNetwork(10, 9) # Added 1 more input neuron to the Neural Network to represent the current player, silly mistake which probaby caused the lower confidence but still high wins.
         # Preconnect all input neurons to all output neurons, gives the AI a head start and speeds up the learning process
-        c_id = 0
-        for i in range(10):
-            for j in range(9):
-                SSNN.add_connection(c_id, i, j + 10, random.uniform(-1, 1))
-                c_id += 1
-        SSNN.mutate(0.25, 100, 25)
+        # c_id = 0
+        # for i in range(10):
+        #     for j in range(9):
+        #         SSNN.add_connection(c_id, i, j + 10, random.uniform(-1, 1))
+        #         c_id += 1
+        # SSNN.mutate(0.25, 100, 25)
         population.append(SSNN)
 
     
