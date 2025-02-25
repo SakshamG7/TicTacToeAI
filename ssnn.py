@@ -436,6 +436,7 @@ def calculate_fitness(NN: SelfLearningNeuralNetwork, POPULATION_SIZE: int, RANDO
     # fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE + RANDO_TURNS) - NN.losses ** 4 / (POPULATION_SIZE * confidence)
     # T4.5 - Slight modification to T4, to avoid 1 loss being worth nothing
     fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE * 90 + RANDO_TURNS) - ((NN.losses + 1) ** 4 - 1) / (POPULATION_SIZE * 90 * POPULATION_SIZE * confidence + 1)
+    # fitness = ((NN.wins + NN.draws / 2) * confidence) / (POPULATION_SIZE * 90 + RANDO_TURNS) - ((NN.losses + 1) ** 2 - 1) / (POPULATION_SIZE * 90 * POPULATION_SIZE * confidence + 1)
     return fitness
 
 def train():
