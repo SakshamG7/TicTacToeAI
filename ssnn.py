@@ -5,7 +5,7 @@ This Neural Network will play tic-tac-toe and maybe chess, to learn from its mis
 
 Author: Saksham Goel
 Date: Feb 24, 2025
-Version: 5.0
+Version: 5.1
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -659,6 +659,5 @@ def play(filename):
             print('You lose!')
 if __name__ == '__main__':
     # Uncomment one of the following lines to run training or play mode:
-    # train()
+    train()
     # play('best_relu_v3/ssnn.json')
-    play('best_relu_v2/best_1454_0.02016229641832401.json')
