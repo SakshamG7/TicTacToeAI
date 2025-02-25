@@ -4,8 +4,8 @@ Saksham's Self Learning Neural Network
 This Neural Network will play tic-tac-toe and maybe chess, to learn from its mistakes and improve its gameplay
 
 Author: Saksham Goel
-Date: Feb 24, 2025
-Version: 5.1
+Date: Feb 25, 2025
+Version: 5.2
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -382,11 +382,16 @@ def compare_models(model1: SelfLearningNeuralNetwork, model2: SelfLearningNeural
             if x == o and x != 9: # Prevents invalid starting positions
                 continue
             game = TicTacToe()
+
+            user_turn = True
+            
+            # Note: that there should be a minimum of 28 losses with this config of starting pos, we only know this because tictactoe is a solved game, however, this is not the case for chess.
             if x != 9:
                 game.play(x)
                 if o != 9: # o should never play first
                     game.play(o)
-            user_turn = True
+                    user_turn = False
+            
             while not game.is_over():
                 if user_turn:
                     state = game.board + [1]
@@ -436,9 +441,9 @@ def calculate_fitness(NN: SelfLearningNeuralNetwork, POPULATION_SIZE: int, RANDO
 def train():
     # Parameters
     POPULATION_SIZE = 25
-    ELITE_SIZE = 5
+    ELITE_SIZE = 3
     GENERATIONS = 10000
-    MUTATION_RATE = 0.1
+    MUTATION_RATE = 0.2
     RANDO_TURNS = 100 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
