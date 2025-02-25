@@ -5,7 +5,7 @@ This Neural Network will play tic-tac-toe and maybe chess, to learn from its mis
 
 Author: Saksham Goel
 Date: Feb 25, 2025
-Version: 5.2
+Version: 5.3
 
 Github: @SakshamG7
 Organization: AceIQ
@@ -389,7 +389,7 @@ def compare_models(model1: SelfLearningNeuralNetwork, model2: SelfLearningNeural
             if x != 9:
                 game.play(x)
                 if o != 9: # o should never play first
-                    game.play(o)
+                    game.play(-o)
                     user_turn = False
             
             while not game.is_over():
@@ -441,7 +441,7 @@ def calculate_fitness(NN: SelfLearningNeuralNetwork, POPULATION_SIZE: int, RANDO
 def train():
     # Parameters
     POPULATION_SIZE = 25
-    ELITE_SIZE = 3
+    ELITE_SIZE = 5
     GENERATIONS = 10000
     MUTATION_RATE = 0.2
     RANDO_TURNS = 100 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
