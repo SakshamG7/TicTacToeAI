@@ -381,8 +381,8 @@ def compare_models(model1: SelfLearningNeuralNetwork, model2: SelfLearningNeural
         for o in range(10):
             if x == o and x != 9: # Prevents invalid starting positions
                 continue
-            game = TicTacToe()
 
+            game = TicTacToe()
             user_turn = True
             
             # Note: that there should be a minimum of 28 losses with this config of starting pos, we only know this because tictactoe is a solved game, however, this is not the case for chess.
