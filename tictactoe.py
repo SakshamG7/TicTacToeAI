@@ -32,8 +32,20 @@ class TicTacToe(object):
         return self.board[move] == 0
 
     def print_board(self) -> None:
+        """
+        Prints the Tic Tac Toe board in a visually appealing format with grid lines.
+        Represents player 1 as 'X', player -1 as 'O', and empty cells as spaces.
+        """
+        symbols = {0: ' ', 1: 'X', -1: 'O'}
+        
+        print("┌───┬───┬───┐")
         for i in range(3):
-            print(self.board[3 * i:3 * i + 3])
+            row_cells = [symbols[self.board[i*3 + j]] for j in range(3)]
+            print(f"│ {row_cells[0]} │ {row_cells[1]} │ {row_cells[2]} │")
+            if i < 2:
+                print("├───┼───┼───┤")
+            else:
+                print("└───┴───┴───┘")
 
     # check_winner: checks if there is a winner
     def check_winner(self) -> bool:
