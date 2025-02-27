@@ -18,6 +18,7 @@ import math
 import random
 import json  # For saving and loading the Neural Network
 from tictactoe import TicTacToe
+import os # helps preload populations if needed
 
 # Activation Function
 # def SakshamsLinearCutOff(x: float) -> float:
@@ -313,12 +314,12 @@ class SelfLearningNeuralNetwork(object):
             # Mutate weights.
             if random.random() < mutation_rate and self.connections:
                 connection_id = random.choice(list(self.connections.keys()))
-                self.connections[connection_id][2] += random.uniform(-1, 1)
+                self.connections[connection_id][2] += random.uniform(-0.1, 0.1)
 
             # Mutate biases.
             if random.random() < mutation_rate / 2 and self.neurons:
                 neuron_id = random.choice(list(self.neurons.keys()))
-                self.neurons[neuron_id][0] += random.uniform(-1, 1)
+                self.neurons[neuron_id][0] += random.uniform(-0.1, 0.1)
 
 
     def copy(self):
@@ -442,16 +443,27 @@ def calculate_fitness(NN: SelfLearningNeuralNetwork, POPULATION_SIZE: int, RANDO
 
 def train():
     # Parameters
-    POPULATION_SIZE = 25
-    ELITE_SIZE = 5
+    POPULATION_SIZE = 100
+    ELITE_SIZE = 10
     GENERATIONS = 10000
     MUTATION_RATE = 0.2
     RANDO_TURNS = 100 # The number of times that the AI plays with a player that makes random moves, this allows the AI to explore more and learn more
 
     population = []
 
+    # Preload the population if needed from the models folder 'best_relu_v3'
+    model_files = os.listdir('best_relu_v3')
+    # Get the highest generation number models, and only load upto the population size
+    model_files = sorted(model_files, key=lambda x: int(x.split('_')[1]), reverse=True)[:POPULATION_SIZE]
+    for model_file in model_files:
+        print(f'Loading model:\t{model_file}')
+        model = SelfLearningNeuralNetwork()
+        model.load(f'best_relu_v3/{model_file}')
+        population.append(model.copy())
+        print(f'Loaded model:\t{model_file}')
+
     # Setup the initial population, mutate it too to add some diversity
-    for _ in range(POPULATION_SIZE):
+    for _ in range(POPULATION_SIZE - len(population)):
         SSNN = SelfLearningNeuralNetwork(10, 9) # Added 1 more input neuron to the Neural Network to represent the current player, silly mistake which probaby caused the lower confidence but still high wins.
         # Preconnect all input neurons to all output neurons, gives the AI a head start and speeds up the learning process
         # c_id = 0
@@ -464,7 +476,7 @@ def train():
 
     
     best_model = population[0].copy() # Just for the sake of having a variable to store the best model
-    best_model.save(f'best_relu_v3/best_gen_-1_{random.random()}.json') # Save the best model
+    best_model.save(f'best_relu_v3/best_-1_{random.random()}.json') # Save the best model
 
     # Training loop, find the best Neural Network
     RANDO_TURNS += 1 # Add 1 to the random turns to make the AI explore more in the beginning
@@ -564,11 +576,11 @@ def train():
         top_model.fitness = calculate_fitness(top_model, 2, 0)
         best_model.fitness = calculate_fitness(best_model, 2, 0)
         # The top model must be alot better than the best model to replace it, this is to prevent the top model to forget more advanced strategies
-
+        best_diff = 0.15
         if best_model.fitness < 0:
-            best_model.fitness *= 0.9
+            best_model.fitness *= (1 - best_diff)
         else:
-            best_model.fitness *= 1.1
+            best_model.fitness *= (1 + best_diff)
 
         # Print the best model and top model's stats
         print(f'Top Model:\tFitness:\t{round(top_model.fitness, 2)},\tWins:\t{top_model.wins},\tLosses:\t{top_model.losses},\tDraws:\t{top_model.draws},\tConfidence:\t{round(100 * top_model.legal_count / top_model.total_moves, 2)}%')
